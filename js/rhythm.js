@@ -1,9 +1,9 @@
-// Port de rhythm.py, con los patrones como datos editables.
-// Un patrón es una lista de pasos [nota, duración]:
-//   nota: índice en el acorde (0 = primera nota … 3 = cuarta; -1 = silencio)
-//   duración: en pulsos (1 = una negra); dura duración × 60 / BPM segundos
+// Port of rhythm.py, with the patterns as editable data.
+// A pattern is a list of steps [note, length]:
+//   note: index into the chord (0 = first note … 3 = fourth; -1 = rest)
+//   length: in beats (1 = a quarter note); it lasts length × 60 / BPM seconds
 
-// Presets del firmware (get_rhythm_pattern de rhythm.py)
+// Firmware presets (get_rhythm_pattern in rhythm.py)
 export const BUILTIN_PATTERNS = [
   { id: "arpeggio_up", name: "arp_up", steps: [[0, 0.5], [1, 1], [2, 1], [3, 1]] },
   { id: "arpeggio_down", name: "arp_down", steps: [[2, 1], [1, 1], [0, 1]] },
@@ -11,7 +11,7 @@ export const BUILTIN_PATTERNS = [
   { id: "drum_rhythm", name: "drum", steps: [[0, 0.5], [2, 0.5], [0, 1]] },
 ].map((p) => ({ ...p, builtin: true }));
 
-// Valores que recorre el encoder de duración
+// Values the length encoder steps through
 export const DURATIONS = [0.25, 0.5, 0.75, 1, 1.5, 2, 3, 4];
 export const DURATION_LABELS = { 0.25: "1/4", 0.5: "1/2", 0.75: "3/4", 1: "1", 1.5: "1.5", 2: "2", 3: "3", 4: "4" };
 export const NOTE_VALUES = [-1, 0, 1, 2, 3];
@@ -22,8 +22,8 @@ export function scaleSteps(steps, timeStep) {
   return steps.map(([idx, mult]) => [idx, mult * timeStep]);
 }
 
-// Presets del usuario. En el aparato irían a un JSON en la flash;
-// aquí se guardan en el navegador (pueden perderse si se borran los datos del sitio).
+// User presets. On the device they would go to a JSON file in flash;
+// here they are kept in the browser (they can be lost if the site data is cleared).
 const STORE_KEY = "chordplayer.arpeggios.v1";
 
 export function loadUserPatterns() {

@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="es">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
@@ -14,14 +14,14 @@
   <header class="top">
     <div>
       <h1>Chord<span>Player</span></h1>
-      <div class="fw">aparato futuro · firmware fw-2026-04-07 · carcasa Main_ZB (mayo 2026) · Raspberry Pi Pico</div>
+      <div class="fw">future device · firmware fw-2026-04-07 · Main_ZB case (May 2026) · Raspberry Pi Pico</div>
     </div>
-    <p>Siete teclas en zigzag tocan los siete acordes de la escala. Los encoders eligen tónica, modo y octava, y la IA sugiere qué acorde viene después.</p>
+    <p>Seven keys in a zigzag play the seven chords of the scale. The encoders pick the root, mode and octave, and the AI suggests which chord comes next.</p>
   </header>
 
-  <section class="stage" aria-label="Dispositivo">
+  <section class="stage" aria-label="Device">
     <div id="device-root" class="device-root"></div>
-    <p class="caption">Encoders: arrastra, usa la rueda o las flechas; un clic pulsa el eje y mantenerlo 1 s abre los ajustes (Base navega, Modo cambia el valor). Ampliadores (Mod 1–3): mantén uno y toca la tecla de acorde. Teclas: clic, toque (varias a la vez) o el teclado del ordenador.</p>
+    <p class="caption">Encoders: drag, use the scroll wheel or the arrow keys; a click presses the shaft, and holding it for 1 s opens the settings (Base moves through them, Mode changes the value). Modifiers (Mod 1–3): hold one and play a chord key. Keys: click, tap (several at once) or use the computer keyboard.</p>
   </section>
 
   <div class="layout">
@@ -29,7 +29,7 @@
       <div class="card now" aria-live="polite">
         <div class="now-head">
           <span class="now-chord" id="now-chord">—</span>
-          <span class="now-meta" id="now-meta">Pulsa una tecla o A S D F G H J</span>
+          <span class="now-meta" id="now-meta">Press a key or A S D F G H J</span>
         </div>
         <div class="now-notes" id="now-notes">&nbsp;</div>
         <div class="piano-scroll"><div class="piano" id="piano"></div></div>
@@ -37,19 +37,19 @@
 
       <div class="card reco">
         <div class="row between">
-          <h2>Siguiente acorde</h2>
+          <h2>Next chord</h2>
           <span class="chip" id="reco-source">—</span>
         </div>
         <div class="row">
-          <label for="genre">Género</label>
+          <label for="genre">Genre</label>
           <select id="genre"></select>
-          <label class="switch"><input type="checkbox" id="reco-leds" checked> LEDs en teclas</label>
-          <label class="switch"><input type="checkbox" id="reco-oled" checked> Barras en la OLED</label>
+          <label class="switch"><input type="checkbox" id="reco-leds" checked> LEDs under the keys</label>
+          <label class="switch"><input type="checkbox" id="reco-oled" checked> Bars on the OLED</label>
         </div>
         <div class="history">
-          <span class="history-label">Historial</span>
+          <span class="history-label">History</span>
           <div class="history-list" id="history"></div>
-          <button class="btn small" id="history-clear">Borrar</button>
+          <button class="btn small" id="history-clear">Clear</button>
         </div>
         <ol class="predictions" id="predictions"></ol>
         <p class="hint" id="reco-hint"></p>
@@ -58,19 +58,19 @@
 
     <aside class="panel">
       <div class="card">
-        <h2>Pantalla principal</h2>
+        <h2>Main screen</h2>
         <div class="row">
-          <label for="screen">Vista</label>
+          <label for="screen">View</label>
           <select id="screen">
-            <option value="chords">Acordes (los 7 nombres en zigzag)</option>
-            <option value="keys">Teclado (las notas que suenan)</option>
+            <option value="chords">Chords (the 7 names in a zigzag)</option>
+            <option value="keys">Keyboard (the notes that sound)</option>
           </select>
         </div>
-        <p class="hint">En el aparato: Ajustes → Screen, y el encoder Modo la cambia. En DrumMode se ven siempre los pads.</p>
+        <p class="hint">On the device: Settings → Screen, changed with the Mode encoder. DrumMode always shows the pads.</p>
       </div>
 
       <div class="card">
-        <h2>Ampliadores</h2>
+        <h2>Modifiers</h2>
         <div class="mods">
           <label for="mod-0">Mod 1</label><select id="mod-0"></select>
           <label for="mod-1">Mod 2</label><select id="mod-1"></select>
@@ -79,84 +79,84 @@
         <div class="mods">
           <label for="note-mode">Note</label>
           <select id="note-mode">
-            <option value="gate">Gate · cada nota suena mientras pulsas Note</option>
-            <option value="sustain">Sustain · las notas se acumulan mientras mantienes el acorde</option>
+            <option value="gate">Gate · each note sounds while you hold Note</option>
+            <option value="sustain">Sustain · notes build up while you hold the chord</option>
           </select>
         </div>
-        <p class="hint"><b>Note:</b> mantenlo al tocar la tecla de acorde y solo suena la primera nota; después, cada pulsación de Note toca la siguiente (y vuelve a empezar). Si el acorde ya suena entero, sigue sonando y Note vuelve a tocar sus notas una a una por encima. En Gate cada nota dura lo que mantienes Note; en Sustain se acumulan. En los dos, soltar la tecla de acorde apaga todas. En el aparato: Ajustes → Note.</p>
-        <p class="hint">Mantén un ampliador y toca la tecla de acorde; se pueden combinar. En el aparato se eligen en Ajustes: Base hasta Mod 1–3 y Modo para cambiarlo. 7th, add9 y add6 usan las notas del modo.</p>
+        <p class="hint"><b>Note:</b> hold it while you press a chord key and only the first note sounds; after that, each press of Note plays the next one (and starts over). If the chord is already sounding in full, it keeps sounding and Note replays its notes one by one on top. In Gate each note lasts as long as you hold Note; in Sustain they build up. In both, releasing the chord key stops them all. On the device: Settings → Note.</p>
+        <p class="hint">Hold a modifier and play a chord key; they can be combined. On the device they are picked in Settings: Base down to Mod 1–3 and Mode to change it. 7th, add9 and add6 use the notes of the mode.</p>
       </div>
 
       <div class="card">
-        <h2>Arpegio y tempo</h2>
+        <h2>Arpeggio and tempo</h2>
         <div class="row">
-          <label class="switch"><input type="checkbox" id="rhythm-on"> Arpegiar</label>
-          <button class="btn" id="rhythm-next">Patrón siguiente</button>
+          <label class="switch"><input type="checkbox" id="rhythm-on"> Arpeggiate</label>
+          <button class="btn" id="rhythm-next">Next pattern</button>
         </div>
         <div class="row">
-          <label for="pattern">Arpegio</label>
+          <label for="pattern">Arpeggio</label>
           <select id="pattern"></select>
-          <button class="btn small" id="pattern-delete" hidden>Borrar preset</button>
+          <button class="btn small" id="pattern-delete" hidden>Delete preset</button>
         </div>
         <div class="row">
-          <div class="steps" id="rhythm-steps" aria-label="Pasos del arpegio"></div>
+          <div class="steps" id="rhythm-steps" aria-label="Arpeggio steps"></div>
         </div>
         <div class="row">
           <label for="bpm">Tempo</label>
           <input type="range" id="bpm" min="40" max="300" step="1" value="120">
           <span class="value" id="bpm-val">120 BPM</span>
         </div>
-        <p class="hint">Un paso de duración 1 dura un pulso (una negra) a este tempo. En el aparato están en Ajustes (mantén un encoder 1 s): Base navega, Modo cambia Arp, Tempo o Pattern, y un toque en Pattern abre el editor. En el editor, Base elige el paso, Modo su nota y Octava su duración.</p>
+        <p class="hint">A step of length 1 lasts one beat (a quarter note) at this tempo. On the device they are in Settings (hold an encoder for 1 s): Base moves through the rows, Mode changes Arp, Tempo or Pattern, and a press on Pattern opens the editor. In the editor, Base picks the step, Mode its note and Octave its length.</p>
       </div>
 
       <div class="card">
-        <h2>Sonido</h2>
+        <h2>Sound</h2>
         <div class="row">
           <label for="timbre">Timbre</label>
           <select id="timbre"></select>
-          <span class="chip" id="audio-state">audio en espera</span>
+          <span class="chip" id="audio-state">audio waiting</span>
         </div>
         <div class="row">
-          <label for="volume">Volumen</label>
+          <label for="volume">Volume</label>
           <input type="range" id="volume" min="0" max="1" step="0.01" value="0.7">
         </div>
-        <p class="hint">El aparato no suena: envía MIDI por USB. Aquí un sintetizador del navegador hace de DAW.</p>
+        <p class="hint">The device makes no sound itself: it sends MIDI over USB. Here a synthesizer in the browser plays the part of the DAW.</p>
       </div>
 
       <div class="card">
-        <h2>Salida MIDI</h2>
+        <h2>MIDI output</h2>
         <div class="row">
-          <button class="btn" id="midi-connect">Conectar Web MIDI</button>
+          <button class="btn" id="midi-connect">Connect Web MIDI</button>
           <select id="midi-port" hidden></select>
-          <span class="chip" id="midi-state">desconectado</span>
+          <span class="chip" id="midi-state">disconnected</span>
         </div>
-        <p class="hint">Canal 1 para acordes y canal 10 en DrumMode. Web MIDI necesita Chrome o Edge y una página en <code>https</code> o <code>localhost</code>.</p>
+        <p class="hint">Channel 1 for chords and channel 10 in DrumMode. Web MIDI needs Chrome or Edge and a page on <code>https</code> or <code>localhost</code>.</p>
       </div>
 
       <div class="card">
-        <h2>Teclado</h2>
+        <h2>Keyboard</h2>
         <dl class="keys">
-          <dt>A S D F G H J</dt><dd>Teclas I a VII (también 1–7)</dd>
-          <dt>Z / X</dt><dd>Encoder Base − / +</dd>
-          <dt>C / V</dt><dd>Encoder Modo − / +</dd>
-          <dt>B / N</dt><dd>Encoder Octava − / +</dd>
-          <dt>M</dt><dd>Pulsar encoder Modo (género; en el menú, elegir); mantener 1 s: ajustes</dd>
-          <dt>Q / W / E</dt><dd>Mantener Mod 1 / 2 / 3 y tocar un acorde</dd>
-          <dt>R</dt><dd>Note: mantener al tocar un acorde; cada pulsación, la nota siguiente</dd>
-          <dt>K / L / , .</dt><dd>Arpegio on/off, patrón siguiente, tempo −5 / +5 BPM (atajos del simulador)</dd>
+          <dt>A S D F G H J</dt><dd>Keys I to VII (also 1–7)</dd>
+          <dt>Z / X</dt><dd>Base encoder − / +</dd>
+          <dt>C / V</dt><dd>Mode encoder − / +</dd>
+          <dt>B / N</dt><dd>Octave encoder − / +</dd>
+          <dt>M</dt><dd>Press the Mode encoder (genre; in the menu, select); hold 1 s: settings</dd>
+          <dt>Q / W / E</dt><dd>Hold Mod 1 / 2 / 3 and play a chord</dd>
+          <dt>R</dt><dd>Note: hold while playing a chord; each press plays the next note</dd>
+          <dt>K / L / , .</dt><dd>Arpeggio on/off, next pattern, tempo −5 / +5 BPM (simulator shortcuts)</dd>
         </dl>
       </div>
 
       <div class="card">
-        <h2>Real o propuesta</h2>
+        <h2>Real or proposed</h2>
         <ul class="origin">
-          <li><b>Del firmware:</b> encoders de tónica, modo y octava; teclas polifónicas; en DrumMode, girar Octava con un pad pulsado cambia su nota.</li>
-          <li><b>Del CAD:</b> carcasa <code>Main_ZB</code>, teclas <code>Key_V1_Long</code> en zigzag cada 20 mm, OLED de 2.42", 3 encoders en columna y 3 botones bajo la pantalla.</li>
-          <li><b>Propuesta:</b> IA de <code>Chord_AI</code> en el aparato, género con el pulsador del encoder Modo, LEDs bajo las teclas y barras en la OLED.</li>
-          <li><b>Propuesta:</b> sin los 7 modos "7th" del firmware: la séptima se toca con el ampliador 7th.</li>
-          <li><b>Propuesta:</b> botón <i>Note</i> junto a los ampliadores (aún sin agujero en el CAD): arpegio a mano, una nota por pulsación.</li>
-          <li><b>Propuesta:</b> los 3 botones bajo la pantalla son ampliadores de acorde. Se mantienen antes de tocar la tecla y cada uno hace lo que diga Ajustes (séptima, novena, reducido…).</li>
-          <li><b>Propuesta:</b> ajustes al mantener cualquier encoder 1 s: Arp, Tempo, Pattern, New pattern, Mod 1–3, Screen (acordes o teclado en la pantalla principal). El encoder Base navega y el Modo cambia el valor; el toque solo abre el editor, crea un patrón o sale. En el editor, Base elige el paso, Modo cambia su nota (1–4 o silencio) y Octava su duración; un toque sobre un paso lo coge para moverlo. <i>Save</i> guarda un preset (los del firmware se guardan como copia <i>User N</i>). Mantener 1 s otra vez cierra el menú sin guardar.</li>
+          <li><b>From the firmware:</b> root, mode and octave encoders; polyphonic keys; in DrumMode, turning Octave while holding a pad changes its note.</li>
+          <li><b>From the CAD:</b> <code>Main_ZB</code> case, <code>Key_V1_Long</code> keys in a zigzag every 20 mm, 2.42" OLED, 3 encoders in a column and 3 buttons under the screen.</li>
+          <li><b>Proposed:</b> <code>Chord_AI</code> on the device, genre on the Mode encoder's push switch, LEDs under the keys and bars on the OLED.</li>
+          <li><b>Proposed:</b> no 7 "7th" modes from the firmware: the seventh is played with the 7th modifier.</li>
+          <li><b>Proposed:</b> a <i>Note</i> button next to the modifiers (no hole in the CAD yet): a hand-played arpeggio, one note per press.</li>
+          <li><b>Proposed:</b> the 3 buttons under the screen are chord modifiers. They are held before playing the key, and each one does whatever Settings says (seventh, ninth, reduced…).</li>
+          <li><b>Proposed:</b> settings by holding any encoder for 1 s: Arp, Tempo, Pattern, New pattern, Mod 1–3, Note, Screen (chords or keyboard on the main screen). The Base encoder moves through the rows and Mode changes the value; a press only opens the editor, creates a pattern or exits. In the editor, Base picks the step, Mode changes its note (1–4 or rest) and Octave its length; a press on a step picks it up to move it. <i>Save</i> stores a preset (firmware presets are saved as a <i>User N</i> copy). Holding for 1 s again closes the menu without saving.</li>
         </ul>
       </div>
     </aside>
@@ -164,13 +164,13 @@
 
   <div class="card">
     <div class="row between">
-      <h2>Consola serie</h2>
-      <label class="switch"><input type="checkbox" id="log-midi"> Mostrar mensajes MIDI</label>
+      <h2>Serial console</h2>
+      <label class="switch"><input type="checkbox" id="log-midi"> Show MIDI messages</label>
     </div>
     <div class="console" id="console" role="log"></div>
   </div>
 
-  <footer>Simulación de <code>code.py</code>, <code>chords.py</code>, <code>nextchord.py</code> y <code>rhythm.py</code> (fw-2026-04-07) con los modelos <code>.bin</code> de Chord_AI. Pines: acordes GP7–GP13, encoders GP16/17 · GP21/22 · GP19/20, OLED SDA GP26 / SCL GP27.<br>Modelos de acordes entrenados con <a href="https://github.com/spyroskantarelis/chordonomicon">Chordonomicon</a> (Kantarelis et al., 2024, licencia MIT). Pantalla con la fuente Terminus de Dimitar Zhekov (SIL Open Font License 1.1).</footer>
+  <footer>Simulation of <code>code.py</code>, <code>chords.py</code>, <code>nextchord.py</code> and <code>rhythm.py</code> (fw-2026-04-07) with the Chord_AI <code>.bin</code> models. Pins: chords GP7–GP13, encoders GP16/17 · GP21/22 · GP19/20, OLED SDA GP26 / SCL GP27.<br>Chord models trained on <a href="https://github.com/spyroskantarelis/chordonomicon">Chordonomicon</a> (Kantarelis et al., 2024, MIT license). Screen uses the Terminus font by Dimitar Zhekov (SIL Open Font License 1.1).</footer>
 </div>
 <script type="module" src="js/app.js"></script>
 </body>

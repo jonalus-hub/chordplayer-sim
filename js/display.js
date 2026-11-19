@@ -1,11 +1,11 @@
-// OLED 2.42" 128x64 (SSD1306/SSD1309, 1 bit) con el layout de update_display_text()
+// OLED 2.42" 128x64 (SSD1306/SSD1309, 1 bit) with the update_display_text() layout
 import { BASE_NOTES, MODES, getChordName } from "./chords.js";
 import { drawText } from "./font.js";
 
 export const WIDTH = 128, HEIGHT = 64;
 
-// CHORD_POSITIONS de code.py (zigzag I..VII, igual que las teclas), subidas 4 px porque
-// la cabecera ocupa una sola línea en lugar de dos (propuesta)
+// CHORD_POSITIONS from code.py (zigzag I..VII, like the keys), moved up 4 px because
+// the header takes one line instead of two (proposed)
 export const CHORD_POSITIONS = [
   { chord: "I", x: 5, y: 48 }, { chord: "II", x: 23, y: 31 }, { chord: "III", x: 41, y: 48 },
   { chord: "IV", x: 59, y: 31 }, { chord: "V", x: 77, y: 48 }, { chord: "VI", x: 95, y: 31 },
@@ -31,7 +31,7 @@ export class Oled {
   }
 
   ring(cx, cy, rx, ry) {
-    // Anillo punteado, como los segmentos de chord_indicators
+    // Dotted ring, like the chord_indicators segments
     const c = this.sctx;
     const steps = 20;
     for (let i = 0; i < steps; i++) {
@@ -40,7 +40,7 @@ export class Oled {
     }
   }
 
-  // Texto "en negativo": recorta los píxeles de lo que ya está pintado
+  // Inverted text: cuts its pixels out of what is already drawn
   cutText(str, x, y) {
     const c = this.sctx;
     c.globalCompositeOperation = "destination-out";
@@ -49,20 +49,20 @@ export class Oled {
     return w;
   }
 
-  // Contorno de 1 px
+  // 1 px outline
   box(x, y, w, h) {
     const c = this.sctx;
     c.fillRect(x, y, w, 1); c.fillRect(x, y + h - 1, w, 1);
     c.fillRect(x, y, 1, h); c.fillRect(x + w - 1, y, 1, h);
   }
 
-  // Menú de arpegios (propuesta)
+  // Settings menu and arpeggio editor (proposed)
   renderMenu(menu) {
     if (menu.type === "edit") this.renderEditor(menu); else this.renderList(menu);
   }
 
-  // Lista de ajustes: 5 filas de 12 px sin título, la elegida en negativo.
-  // Si el valor de la fila elegida se cambia con el encoder Modo, va entre < >.
+  // Settings list: 5 rows of 12 px with no title, the selected one inverted.
+  // If the selected row's value is changed with the Mode encoder, it goes between < >.
   renderList(menu) {
     const c = this.sctx;
     const ROWS = 5, TOP = 2, ROW_H = 12;
@@ -84,7 +84,7 @@ export class Oled {
         if (value) this.text(value, vx, y);
       }
     });
-    // Barra de scroll
+    // Scroll bar
     if (n > ROWS) {
       const h = Math.max(4, Math.round((ROWS / n) * (HEIGHT - TOP)));
       const y = TOP + Math.round((first / (n - ROWS)) * (HEIGHT - TOP - h));
@@ -92,7 +92,7 @@ export class Oled {
     }
   }
 
-  // Editor: pasos como cajas de ancho proporcional a la duración, con la nota dentro
+  // Editor: steps as boxes as wide as their length, with the note inside
   renderEditor(menu) {
     const c = this.sctx;
     this.text(menu.title.slice(0, 15), 2, 6);
@@ -102,7 +102,7 @@ export class Oled {
 
     const n = menu.steps.length;
     const GAP = 1, X0 = 2, AVAIL = WIDTH - 4 - GAP * (n - 1);
-    const MIN_W = Math.min(7, Math.floor(AVAIL / n)); // con 16 pasos no caben de 7 px
+    const MIN_W = Math.min(7, Math.floor(AVAIL / n)); // 16 steps do not fit at 7 px
     const total = menu.steps.reduce((a, st) => a + st.dur, 0);
     const extra = AVAIL - MIN_W * n;
     let x = X0;
@@ -117,12 +117,12 @@ export class Oled {
         this.box(x, TOP, w, H);
         if (w >= 6) this.text(st.note, lx, TOP + H / 2);
       }
-      // Paso que está sonando
+      // Step that is sounding
       if (i === menu.playing) c.fillRect(x, TOP + H + 2, w, 2);
       x += w + GAP;
     });
 
-    // Nota y duración del paso elegido, o un aviso
+    // Note and length of the selected step, or a notice
     this.text(menu.flash || menu.detail, 2, 45);
 
     // Acciones
@@ -138,8 +138,8 @@ export class Oled {
     });
   }
 
-  // Vista "Keys" (propuesta): teclado de 2 octavas con las notas que suenan en negativo.
-  // La ventana empieza en el Do de la octava elegida y se recoloca si un acorde no cabe.
+  // "Keys" view (proposed): 2-octave keyboard with the sounding notes inverted.
+  // The window starts at the C of the chosen octave and moves if a chord does not fit.
   renderKeyboard(notes, octave, label) {
     const c = this.sctx;
     const isBlack = (n) => [1, 3, 6, 8, 10].includes(((n % 12) + 12) % 12);
@@ -160,7 +160,7 @@ export class Oled {
     for (let n = start; n <= end; n++) {
       if (!isBlack(n)) continue;
       const x = whiteX[n - 1] + W - Math.floor(BW / 2);
-      c.clearRect(x - 1, TOP, BW + 2, BH + 1);   // hueco entre la negra y las blancas
+      c.clearRect(x - 1, TOP, BW + 2, BH + 1);   // gap between the black key and the white ones
       c.fillRect(x, TOP, BW, BH);
       if (notes.has(n)) c.clearRect(x + 1, TOP + 1, BW - 2, BH - 2);
     }
@@ -176,8 +176,8 @@ export class Oled {
     c.clearRect(0, 0, WIDTH, HEIGHT);
     c.fillStyle = "#fff";
     if (menu) { this.renderMenu(menu); this.blit(); return; }
-    // Cabecera en una línea, solo el contenido: tónica a la izquierda, modo centrado y
-    // octava a la derecha. Un aviso (género) o los ampliadores pulsados ocupan el sitio del modo.
+    // One-line header, content only: root on the left, mode centered and octave on the
+    // right. A notice (genre) or the held modifiers take the place of the mode.
     const base = BASE_NOTES[baseIdx];
     const oct = octave > 0 ? `+${octave}` : `${octave}`;
     this.text(base, 2, 6);
@@ -198,7 +198,7 @@ export class Oled {
       const label = drum ? name.slice(0, 4) : name;
       const w = this.text(label, pos.x, pos.y);
       if (current === pos.chord) this.ring(pos.x + w / 2 - 0.5, pos.y - 0.5, w / 2 + 4, 7);
-      // Propuesta: barra bajo los acordes recomendados, larga según la probabilidad
+      // Proposed: a bar under the recommended chords, as long as their probability
       const level = bars.get(pos.chord);
       if (level) c.fillRect(pos.x, pos.y + 6, Math.max(2, Math.round(Math.max(w, 10) * level)), 1);
     }
@@ -206,7 +206,7 @@ export class Oled {
   }
 
   blit() {
-    // 1 bit por píxel, como la pantalla real
+    // 1 bit per pixel, like the real screen
     const src = this.sctx.getImageData(0, 0, WIDTH, HEIGHT);
     const out = this.ctx.createImageData(WIDTH, HEIGHT);
     const [r, g, b] = this.color;

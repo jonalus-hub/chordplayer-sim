@@ -10,7 +10,7 @@ import { buildDevice } from "./device.js";
 const $ = (id) => document.getElementById(id);
 const synth = new Synth();
 
-// ---------- Consola serie ----------
+// ---------- Serial console ----------
 const consoleEl = $("console");
 let logMidi = false;
 function log(msg, cls = "") {
@@ -22,7 +22,7 @@ function log(msg, cls = "") {
   consoleEl.scrollTop = consoleEl.scrollHeight;
 }
 
-// ---------- Salida: sintetizador + Web MIDI ----------
+// ---------- Output: synthesizer + Web MIDI ----------
 const midi = new MidiOut(renderMidi);
 const out = {
   noteOn(note, vel, ch) {
@@ -43,7 +43,7 @@ const player = new ChordPlayer({
   onChange: () => { if (!scheduled) { scheduled = true; requestAnimationFrame(() => { scheduled = false; render(); }); } },
 });
 
-// ---------- Aparato ----------
+// ---------- Device ----------
 const dev = buildDevice($("device-root"), {
   onKeyDown: (r) => { synth.ensure(); player.press(r); },
   onKeyUp: (r) => player.release(r),
@@ -57,13 +57,13 @@ const dev = buildDevice($("device-root"), {
 });
 const oled = new Oled(dev.canvas);
 
-// ---------- Teclado del ordenador ----------
+// ---------- Computer keyboard ----------
 const KEYS = ["a", "s", "d", "f", "g", "h", "j"];
 const KEYMAP = {};
 KEYS.forEach((k, i) => { KEYMAP[k] = ROMANS[i]; KEYMAP[String(i + 1)] = ROMANS[i]; });
 const ENCKEYS = { z: ["base", -1], x: ["base", 1], c: ["mode", -1], v: ["mode", 1], b: ["octave", -1], n: ["octave", 1] };
-const MODKEYS = { q: 0, w: 1, e: 2 }; // ampliadores: mantener y luego tocar la tecla de acorde
-const NOTE_KEY = "r";                 // Note: mantener al tocar el acorde; cada pulsación, la nota siguiente
+const MODKEYS = { q: 0, w: 1, e: 2 }; // modifiers: hold, then play the chord key
+const NOTE_KEY = "r";                 // Note: hold while playing the chord; each press plays the next note
 const typing = (e) => e.target.closest("select, input[type=range]");
 window.addEventListener("keydown", (e) => {
   if (e.metaKey || e.ctrlKey || e.altKey) return;
@@ -100,7 +100,7 @@ window.addEventListener("blur", () => {
 
 // ---------- Panel ----------
 for (const [id, t] of Object.entries(TIMBRES)) $("timbre").append(new Option(t.label, id));
-GENRES.forEach((g, i) => $("genre").append(new Option(g === "all" ? "todos" : g.replace("_", " "), String(i))));
+GENRES.forEach((g, i) => $("genre").append(new Option(g.replace("_", " "), String(i))));
 $("genre").addEventListener("change", (e) => player.setGenre(+e.target.value));
 $("timbre").addEventListener("change", (e) => { synth.allOff(); synth.timbre = e.target.value; });
 $("volume").addEventListener("input", (e) => synth.setVolume(+e.target.value));
@@ -125,15 +125,15 @@ $("midi-port").addEventListener("change", (e) => { midi.select(e.target.value); 
 
 function renderMidi() {
   const state = $("midi-state"), sel = $("midi-port");
-  const labels = { off: "desconectado", unsupported: "no disponible aquí", denied: "permiso denegado", ready: "listo" };
+  const labels = { off: "disconnected", unsupported: "not available here", denied: "permission denied", ready: "ready" };
   if (midi.status === "ready") {
     const outs = midi.outputs();
     const prev = sel.value;
-    sel.replaceChildren(new Option("— elige un puerto —", ""), ...outs.map((o) => new Option(o.name, o.id)));
+    sel.replaceChildren(new Option("— choose a port —", ""), ...outs.map((o) => new Option(o.name, o.id)));
     sel.value = outs.some((o) => o.id === prev) ? prev : "";
     sel.hidden = false;
     $("midi-connect").hidden = true;
-    state.textContent = midi.port ? "enviando" : outs.length ? "elige puerto" : "sin puertos";
+    state.textContent = midi.port ? "sending" : outs.length ? "choose a port" : "no ports";
     state.className = "chip " + (midi.port ? "ok" : "");
   } else {
     state.textContent = labels[midi.status];
@@ -169,23 +169,23 @@ const isBlack = (n) => [1, 3, 6, 8, 10].includes(n % 12);
   }
 })();
 
-// ---------- Recomendaciones ----------
-const GENRE_LABEL = (g) => (g === "all" ? "todos" : g.replace("_", " "));
+// ---------- Recommendations ----------
+const GENRE_LABEL = (g) => (g === "all" ? "all genres" : g.replace("_", " "));
 function renderReco(p) {
   const r = p.reco;
   const src = $("reco-source");
   if (p.isDrum) { src.textContent = "DrumMode"; src.className = "chip"; }
-  else if (r.source === "ai") { src.textContent = `IA · ${r.file} · orden ${r.order || "—"}`; src.className = "chip ok"; }
+  else if (r.source === "ai") { src.textContent = `AI · ${r.file} · order ${r.order || "—"}`; src.className = "chip ok"; }
   else if (r.source === "nextchord") { src.textContent = "nextchord.py"; src.className = "chip"; }
-  else if (r.source === "error") { src.textContent = "modelo no disponible"; src.className = "chip warn"; }
-  else if (r.loading) { src.textContent = "cargando…"; src.className = "chip"; }
+  else if (r.source === "error") { src.textContent = "model not available"; src.className = "chip warn"; }
+  else if (r.loading) { src.textContent = "loading…"; src.className = "chip"; }
 
   $("genre").value = String(p.genreIdx);
   $("genre").disabled = r.source === "nextchord" || p.isDrum;
 
   $("history").replaceChildren(...(p.history.length
     ? p.history.map((h) => Object.assign(document.createElement("span"), { className: "hchip", textContent: `${h.name} · ${h.token}` }))
-    : [Object.assign(document.createElement("span"), { className: "muted", textContent: "vacío: la IA propone cómo empezar" })]));
+    : [Object.assign(document.createElement("span"), { className: "muted", textContent: "empty: the AI suggests how to start" })]));
 
   const list = $("predictions");
   const items = p.isDrum ? [] : r.items;
@@ -193,7 +193,7 @@ function renderReco(p) {
   list.replaceChildren(...items.map((i) => {
     const li = document.createElement("li");
     li.className = i.roman ? "" : "off";
-    const where = i.end ? "fin de la canción" : i.roman ? `tecla ${i.roman}` : `no está en ${BASE_NOTES[p.baseIdx]} ${p.mode}`;
+    const where = i.end ? "end of the song" : i.roman ? `key ${i.roman}` : `not in ${BASE_NOTES[p.baseIdx]} ${p.mode}`;
     const pct = i.pct == null ? "" : `${i.pct}%`;
     li.innerHTML = `<span class="tok"></span><span class="nm"></span><span class="bar"><i></i></span><span class="pct"></span><span class="where"></span>`;
     li.querySelector(".tok").textContent = i.token;
@@ -205,14 +205,14 @@ function renderReco(p) {
   }));
 
   const hint = $("reco-hint");
-  if (p.isDrum) hint.textContent = "En DrumMode no hay recomendaciones.";
-  else if (r.source === "nextchord") hint.textContent = `${p.mode} no tiene modelo en Chord_AI (no aparece en el dataset), así que se usan las progresiones fijas de nextchord.py.`;
-  else if (r.source === "ai") hint.textContent = `Cadena de Markov entrenada con Chordonomicon (${GENRE_LABEL(p.genre)}). Contexto: ${r.context.join(" → ")}. En el aparato, pulsar el encoder Modo cambia de género.`;
-  else if (r.source === "error") hint.textContent = `No se pudo cargar models/${r.file}.gz (${r.error}).`;
+  if (p.isDrum) hint.textContent = "No recommendations in DrumMode.";
+  else if (r.source === "nextchord") hint.textContent = `${p.mode} has no Chord_AI model (it is not in the dataset), so the fixed progressions from nextchord.py are used.`;
+  else if (r.source === "ai") hint.textContent = `Markov chain trained on Chordonomicon (${GENRE_LABEL(p.genre)}). Context: ${r.context.join(" → ")}. On the device, pressing the Mode encoder changes the genre.`;
+  else if (r.source === "error") hint.textContent = `Could not load models/${r.file}.gz (${r.error}).`;
   else hint.textContent = "";
 }
 
-// Con un ampliador pulsado, la 2.ª línea de la OLED dice cuál (propuesta)
+// With a modifier or Note held, the OLED header shows which one in place of the mode (proposed)
 function modOverlay(p) {
   const parts = p.activeMods().map((m) => modifierById(m).label);
   if (p.noteHeld) parts.push("Note");
@@ -251,26 +251,26 @@ function render() {
   dev.noteBtn.classList.toggle("down", p.noteHeld);
   dev.mods.forEach((btn, i) => {
     btn.classList.toggle("down", p.modHeld[i]);
-    btn.title = `Ampliador ${i + 1}: ${modifierById(p.modAssign[i]).label} (${modifierById(p.modAssign[i]).desc})`;
+    btn.title = `Modifier ${i + 1}: ${modifierById(p.modAssign[i]).label} (${modifierById(p.modAssign[i]).desc})`;
     const sel = $(`mod-${i}`);
     if (sel.value !== p.modAssign[i]) sel.value = p.modAssign[i];
   });
 
-  // Lo que suena
+  // What is sounding
   const chords = p.heldChords();
   if (p.isDrum && p.current) {
     $("now-chord").textContent = DRUM_NAMES[p.current];
-    $("now-meta").textContent = `Pad ${p.current} · canal 10 · nota GM ${p.drumNote(p.current)}`;
+    $("now-meta").textContent = `Pad ${p.current} · channel 10 · GM note ${p.drumNote(p.current)}`;
     $("now-notes").textContent = p.heldPads().map((r) => `${r}: ${p.drumNote(r)}`).join("  ") || " ";
   } else if (chords.length) {
     $("now-chord").textContent = chords.map((r) => p.chordName(r)).join(" + ");
     const cur = chords.includes(p.current) ? p.current : chords.at(-1);
-    $("now-meta").textContent = `Grado ${chords.join(" + ")} de ${BASE_NOTES[p.baseIdx]} ${p.mode} · ${chordType(p.mode, cur)}${p.rhythmMode ? ` · arpegiado (${p.patterns[p.rhythmIdx].name})` : ""}`;
+    $("now-meta").textContent = `Degree ${chords.join(" + ")} of ${BASE_NOTES[p.baseIdx]} ${p.mode} · ${chordType(p.mode, cur)}${p.rhythmMode ? ` · arpeggiated (${p.patterns[p.rhythmIdx].name})` : ""}`;
     const notes = [...p.activeNotes()].sort((a, b) => a - b);
     $("now-notes").textContent = notes.length ? notes.map((n) => `${midiName(n)} (${n})`).join("  ") : " ";
   } else {
     $("now-chord").textContent = "—";
-    $("now-meta").textContent = `${BASE_NOTES[p.baseIdx]} ${p.mode} · octava ${p.octave > 0 ? "+" : ""}${p.octave}`;
+    $("now-meta").textContent = `${BASE_NOTES[p.baseIdx]} ${p.mode} · octave ${p.octave > 0 ? "+" : ""}${p.octave}`;
     $("now-notes").textContent = " ";
   }
 
@@ -281,7 +281,7 @@ function render() {
 
   renderReco(p);
 
-  // Ritmo
+  // Arpeggio
   const sel = $("pattern");
   const sig = p.patterns.map((x) => x.name).join("|");
   if (sel.dataset.sig !== sig) {
@@ -296,7 +296,7 @@ function render() {
   [...stepsEl.children].forEach((s, i) => {
     const [note, mult] = raw[i];
     s.textContent = noteLabel(note);
-    s.title = `Paso ${i + 1}: nota ${noteLabel(note)}, duración ${DURATION_LABELS[mult] ?? mult}`;
+    s.title = `Step ${i + 1}: note ${noteLabel(note)}, length ${DURATION_LABELS[mult] ?? mult}`;
     s.classList.toggle("hit", !!(p.rhythm && p.rhythm.stepIdx === i));
     s.classList.toggle("rest", note < 0);
     s.style.width = `${mult * 28}px`;
@@ -307,7 +307,7 @@ function render() {
 
   const a = $("audio-state");
   const running = synth.ctx && synth.ctx.state === "running";
-  a.textContent = running ? "audio activo" : "audio en espera";
+  a.textContent = running ? "audio on" : "audio waiting";
   a.className = "chip " + (running ? "ok" : "");
 }
 

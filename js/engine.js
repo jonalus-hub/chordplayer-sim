@@ -1,6 +1,6 @@
-// Máquina de estados de code.py (fw-2026-04-07), pasada de "polling" a eventos,
-// más las funciones propuestas para el aparato futuro (IA, género, LEDs, menú de ajustes,
-// arpegios editables y ampliadores de acorde).
+// State machine of code.py (fw-2026-04-07), turned from polling into events,
+// plus the proposed features of the future device (AI, genre, LEDs, settings menu,
+// editable arpeggios, chord modifiers and the Note button).
 import { BASE_NOTES, MODES, ROMANS, chordInfo, applyOctave, DRUM_NOTES, extendChord, extendedName, modifierById } from "./chords.js";
 import { getNextChords, chordToFunction } from "./nextchord.js";
 import { BUILTIN_PATTERNS, scaleSteps, loadUserPatterns, saveUserPatterns } from "./rhythm.js";
@@ -10,14 +10,14 @@ import { GENRES, modelFile, loadModel, predict, tokenFor, parseToken } from "./a
 const MIDI_VELOCITY = 127;
 const DEFAULT_CHANNEL = 0;
 const DRUM_CHANNEL = 9;
-const MENU_TIMEOUT_MS = 20000; // fuera del editor; el editor no se cierra solo
+const MENU_TIMEOUT_MS = 20000; // outside the editor; the editor never closes by itself
 const MOD_KEY = "chordplayer.modifiers.v1";
 const DEFAULT_MODS = ["7", "9", "5"];
 
-// Otros ajustes que se guardan (propuesta): vista de la pantalla principal y modo del botón Note
+// Other saved settings (proposed): main screen view and Note button mode
 const SETTINGS_KEY = "chordplayer.settings.v1";
 export const SCREENS = { chords: "Chords", keys: "Keys" };
-// gate: cada nota suena mientras Note está pulsado · sustain: se acumulan mientras se mantiene el acorde
+// gate: each note sounds while Note is held · sustain: notes build up while the chord is held
 export const NOTE_MODES = { gate: "Gate", sustain: "Sustain" };
 
 function loadSettings() {
@@ -36,30 +36,30 @@ function loadModAssign() {
   try {
     const v = JSON.parse(localStorage.getItem(MOD_KEY) || "null");
     if (Array.isArray(v) && v.length === 3 && v.every((id) => modifierById(id))) return v;
-  } catch { /* sin almacenamiento */ }
+  } catch { /* no storage */ }
   return [...DEFAULT_MODS];
 }
 const wrap = (i, n) => ((i % n) + n) % n;
 const MIN_OCTAVE = -3, MAX_OCTAVE = 3;
 const GATE_MIN_S = 0.01, GATE_FRACTION = 0.5;
 const HISTORY = 4;
-const MIN_BPM = 40, MAX_BPM = 300, DEFAULT_BPM = 120; // DEFAULT_BPM de code.py
+const MIN_BPM = 40, MAX_BPM = 300, DEFAULT_BPM = 120; // DEFAULT_BPM from code.py
 const OVERLAY_MS = 1500;
 
 export class ChordPlayer {
   constructor({ out, onChange, log }) {
     this.out = out;            // { noteOn(note, vel, ch), noteOff(note, vel, ch) }
-    this.onChange = onChange;  // repinta UI
-    this.log = log;            // "consola serie"
+    this.onChange = onChange;  // repaints the UI
+    this.log = log;            // "serial console"
     this.baseIdx = 0;
     this.modeIdx = 0;
     this.octave = 0;
-    this.held = new Map();       // grado -> { drum, note } en orden de pulsación
-    this.current = null;         // el que marca el círculo de la OLED
-    this.noteStates = new Map(); // nota -> Set(grado), como note_states
-    this.chordNotes = {};        // notas realmente enviadas por grado
+    this.held = new Map();       // degree -> { drum, note, mods, manual } in press order
+    this.current = null;         // the one circled on the OLED
+    this.noteStates = new Map(); // note -> Set(degree), like note_states
+    this.chordNotes = {};        // notes actually sent, per degree
     this.drumOffsets = Object.fromEntries(ROMANS.map((r) => [r, 0]));
-    this.drumLabels = {};        // pad -> número MIDI mientras se reasigna
+    this.drumLabels = {};        // pad -> MIDI number while it is being reassigned
     this.history = [];           // [{ roman, token, name }]
     this.genreIdx = 0;
     this.reco = { source: "none", items: [] };
@@ -69,20 +69,20 @@ export class ChordPlayer {
     this.rhythmIdx = 0;
     this.bpm = DEFAULT_BPM;
     this.rhythm = null;
-    // Patrones de arpegio: los del firmware + los guardados por el usuario
+    // Arpeggio patterns: the firmware's + the ones saved by the user
     this.patterns = [...BUILTIN_PATTERNS.map((p) => ({ ...p, steps: p.steps.map((s) => [...s]) })), ...loadUserPatterns()];
     this.showLeds = true;
     this.showBars = true;
-    // Ampliadores: 3 botones bajo la pantalla; se mantienen antes de pulsar el acorde
+    // Modifiers: 3 buttons under the screen, held before pressing the chord
     this.modHeld = [false, false, false];
-    // Botón Note (propuesta): pulsado antes del acorde, el acorde suena nota a nota
+    // Note button (proposed): held before the chord, the chord plays note by note
     this.noteHeld = false;
-    this.noteArp = null;         // { chord, mods, idx, playing, sounding } mientras se toca nota a nota
+    this.noteArp = null;         // { chord, mods, idx, playing, sounding } while playing note by note
     this.modAssign = loadModAssign();
     const settings = loadSettings();
-    this.screen = settings.screen;        // "chords" (nombres en zigzag) o "keys" (teclado)
-    this.noteMode = settings.noteMode;    // "gate" o "sustain" (botón Note)
-    this.menu = null;            // ArpMenu mientras está abierto
+    this.screen = settings.screen;        // "chords" (names in a zigzag) or "keys" (keyboard)
+    this.noteMode = settings.noteMode;    // "gate" or "sustain" (Note button)
+    this.menu = null;            // ArpMenu while it is open
   }
 
   get mode() { return MODES[this.modeIdx]; }
@@ -105,12 +105,12 @@ export class ChordPlayer {
     return extendChord(this.mode, roman, BASE_NOTES[this.baseIdx], mods).map((n) => applyOctave(n, this.octave));
   }
 
-  // Nombre del acorde con los ampliadores con que se pulsó
+  // Chord name with the modifiers it was pressed with
   chordName(roman) {
     return extendedName(this.baseIdx, this.modeIdx, roman, this.held.get(roman)?.mods ?? []);
   }
 
-  // ---- Ampliadores ----
+  // ---- Modifiers ----
   activeMods() {
     return [...new Set(this.modAssign.filter((_, i) => this.modHeld[i]))];
   }
@@ -122,19 +122,19 @@ export class ChordPlayer {
     this.onChange();
   }
 
-  // ---- Botón Note (propuesta) ----
+  // ---- Note button (proposed) ----
   pressNote() {
     if (this.noteHeld) return;
     this.noteHeld = true;
     const a = this.noteArp;
     if (a && !this.isDrum) {
-      // Siguiente nota del acorde (al pasar de la última vuelve a la primera)
+      // Next note of the chord (after the last one it goes back to the first)
       if (this.noteMode === "gate") this.noteArpStop();
       a.idx = (a.idx + 1) % this.notesFor(a.chord, a.mods).length;
       this.noteArpPlay();
     } else if (!this.isDrum) {
-      // Note con un acorde ya sonando: el acorde sigue y sus notas se vuelven a tocar
-      // una a una por encima, empezando por la primera
+      // Note with a chord already sounding: the chord keeps going and its notes are played
+      // again one by one on top, starting from the first
       const full = this.fullChords();
       const chord = full.includes(this.current) ? this.current : full.at(-1);
       if (chord) {
@@ -149,7 +149,7 @@ export class ChordPlayer {
   releaseNote() {
     if (!this.noteHeld) return;
     this.noteHeld = false;
-    // Gate: la nota se apaga al soltar Note. Sustain: sigue mientras se mantenga la tecla de acorde
+    // Gate: the note stops when Note is released. Sustain: it lasts while the chord key is held
     if (this.noteMode === "gate") this.noteArpStop();
     this.onChange();
   }
@@ -160,7 +160,7 @@ export class ChordPlayer {
     a.idx %= notes.length;
     const n = notes[a.idx];
     const id = `${a.chord}:note`;
-    // En Sustain, al volver a una nota que ya suena se vuelve a tocar
+    // In Sustain, coming back to a note that is already sounding replays it
     if (a.sounding.has(n)) this.sendNoteOff(n, id);
     a.playing = n;
     a.sounding.add(n);
@@ -176,7 +176,7 @@ export class ChordPlayer {
     }
   }
 
-  // Apaga todas las notas tocadas con Note (en Sustain se acumulan)
+  // Stops every note played with Note (in Sustain they build up)
   noteArpStopAll() {
     const a = this.noteArp;
     if (!a) return;
@@ -192,7 +192,7 @@ export class ChordPlayer {
   }
 
   saveSettings() {
-    try { localStorage.setItem(SETTINGS_KEY, JSON.stringify({ screen: this.screen, noteMode: this.noteMode })); } catch { /* solo esta sesión */ }
+    try { localStorage.setItem(SETTINGS_KEY, JSON.stringify({ screen: this.screen, noteMode: this.noteMode })); } catch { /* this session only */ }
   }
 
   setScreen(screen) {
@@ -213,7 +213,7 @@ export class ChordPlayer {
 
   setModAssign(i, id) {
     this.modAssign[i] = id;
-    try { localStorage.setItem(MOD_KEY, JSON.stringify(this.modAssign)); } catch { /* solo esta sesión */ }
+    try { localStorage.setItem(MOD_KEY, JSON.stringify(this.modAssign)); } catch { /* this session only */ }
     this.log(`Modifier ${i + 1} set to ${modifierById(id).label}`);
     this.onChange();
   }
@@ -223,12 +223,12 @@ export class ChordPlayer {
   }
 
   heldChords() { return [...this.held].filter(([, e]) => !e.drum).map(([r]) => r); }
-  // Acordes que suenan enteros (no los que se tocan nota a nota con Note)
+  // Chords sounding in full (not the ones played note by note with Note)
   fullChords() { return [...this.held].filter(([, e]) => !e.drum && !e.manual).map(([r]) => r); }
   heldPads() { return [...this.held].filter(([, e]) => e.drum).map(([r]) => r); }
 
-  // ---- MIDI con conteo de referencias (send_note_on / send_note_off) ----
-  // restrike: vuelve a mandar Note On aunque la nota ya suene (Note tocando encima de un acorde)
+  // ---- Reference-counted MIDI (send_note_on / send_note_off) ----
+  // restrike: sends Note On again even if the note is already sounding (Note on top of a chord)
   sendNoteOn(note, button, restrike = false) {
     if (!this.noteStates.has(note)) {
       this.noteStates.set(note, new Set());
@@ -260,10 +260,10 @@ export class ChordPlayer {
     delete this.chordNotes[roman];
   }
 
-  // Tras girar un encoder: apaga lo que suena y vuelve a tocar lo que sigue pulsado
+  // After turning an encoder: stop what is sounding and replay what is still held
   retune() {
     Object.keys(this.chordNotes).forEach((r) => this.stopChord(r));
-    // Nota a nota: si Note sigue pulsado, vuelve a tocar la misma posición con las notas nuevas
+    // Note by note: if Note is still held, replay the same position with the new notes
     if (this.noteArp) {
       this.noteArpStopAll();
       if (this.noteMode === "gate" && this.noteHeld && !this.isDrum && this.held.has(this.noteArp.chord)) this.noteArpPlay();
@@ -276,7 +276,7 @@ export class ChordPlayer {
     else chords.forEach((r) => this.playChord(r));
   }
 
-  // ---- Teclas de acorde (polifónicas, como handle_chord_buttons) ----
+  // ---- Chord keys (polyphonic, like handle_chord_buttons) ----
   press(roman) {
     if (this.held.has(roman)) return;
     if (this.isDrum) {
@@ -284,16 +284,16 @@ export class ChordPlayer {
       this.out.noteOn(note, MIDI_VELOCITY, DRUM_CHANNEL);
       this.held.set(roman, { drum: true, note });
     } else {
-      // Cualquier tecla de acorde termina el acorde anterior tocado nota a nota
+      // Any chord key ends the previous chord played note by note
       if (this.noteArp) { this.noteArpStopAll(); this.noteArp = null; }
-      // Los ampliadores cuentan solo si ya estaban pulsados al tocar la tecla
+      // Modifiers only count if they were already held when the key was pressed
       const mods = this.activeMods();
       const manual = this.noteHeld;
       this.held.set(roman, { drum: false, mods, manual });
       this.addHistory(roman, mods);
       if (mods.length) this.log(`Chord ${roman} + ${mods.map((m) => modifierById(m).label).join(" + ")}: ${this.chordName(roman)}`);
       if (manual) {
-        // Con Note pulsado solo suena la primera nota; las demás, con cada pulsación de Note
+        // With Note held only the first note sounds; the rest, one per press of Note
         this.noteArp = { chord: roman, mods, idx: 0, playing: null, sounding: new Set() };
         this.noteArpPlay();
         this.log(`Chord ${roman} note by note: press Note for each next note`);
@@ -312,11 +312,11 @@ export class ChordPlayer {
       this.out.noteOff(e.note, 0, DRUM_CHANNEL);
       delete this.drumLabels[roman];
     } else if (this.noteArp && this.noteArp.chord === roman) {
-      // Soltar la tecla de acorde apaga todas las notas tocadas con Note (en Gate y en Sustain)
+      // Releasing the chord key stops every note played with Note (in Gate and in Sustain)
       this.noteArpStopAll();
       this.noteArp = null;
     }
-    // Acorde entero (con o sin notas de Note encima): apagarlo o pasar el arpegio a otro
+    // Full chord (with or without Note notes on top): stop it, or move the arpeggio to another one
     if (!e.drum && !e.manual) {
       if (this.rhythmMode) {
         const chords = this.fullChords();
@@ -332,7 +332,7 @@ export class ChordPlayer {
 
   releaseAll() { [...this.held.keys()].forEach((r) => this.release(r)); }
 
-  // ---- Encoders (KY-040: girar = ±1 detent, pulsar = SW) ----
+  // ---- Encoders (KY-040: turn = ±1 detent, press = SW) ----
   turn(enc, d) {
     if (this.menu) { this.menu.turn(enc, d); this.touchMenu(); this.onChange(); return; }
     if (enc === "base") {
@@ -346,7 +346,7 @@ export class ChordPlayer {
     } else if (enc === "octave") {
       const pads = this.isDrum ? this.heldPads() : [];
       if (pads.length) {
-        // DrumMode: con un pad pulsado, el encoder de octava cambia su nota
+        // DrumMode: with a pad held, the octave encoder changes its note
         for (const r of pads) {
           this.drumOffsets[r] += d;
           const n = this.drumNote(r);
@@ -369,17 +369,17 @@ export class ChordPlayer {
     this.onChange();
   }
 
-  // Propuesta: toque corto en Modo = género siguiente; con el menú abierto, toque = elegir
+  // Proposed: short press on Mode = next genre; with the menu open, press = select
   push(enc) {
     if (this.menu) { this.menu.press(); this.touchMenu(); this.onChange(); return; }
     if (enc === "mode") {
       this.setGenre((this.genreIdx + 1) % GENRES.length);
     } else {
-      this.log(`Encoder ${enc}: SW sin función asignada`, "prompt");
+      this.log(`Encoder ${enc}: SW has no function assigned`, "prompt");
     }
   }
 
-  // Propuesta: mantener cualquier encoder 1 s abre o cierra el menú
+  // Proposed: holding any encoder for 1 s opens or closes the menu
   longPress(enc) {
     if (this.menu) this.closeMenu(); else this.openMenu(enc);
   }
@@ -392,7 +392,7 @@ export class ChordPlayer {
     this.onChange();
   }
 
-  // ---- Menú de arpegios (propuesta, ver arpmenu.js) ----
+  // ---- Settings menu (proposed, see arpmenu.js) ----
   openMenu(enc) {
     this.menu = new ArpMenu(this);
     this.log(`Arpeggio menu opened (encoder ${enc} held 1 s)`);
@@ -409,7 +409,7 @@ export class ChordPlayer {
     this.onChange();
   }
 
-  // La lista se cierra sola tras 20 s sin tocar nada; el editor no
+  // The list closes by itself after 20 s untouched; the editor does not
   touchMenu() {
     clearTimeout(this.menuTimer);
     if (this.menu && this.menu.level !== "edit") this.menuTimer = setTimeout(() => this.closeMenu(), MENU_TIMEOUT_MS);
@@ -417,7 +417,7 @@ export class ChordPlayer {
 
   menuView() { return this.menu ? this.menu.view() : null; }
 
-  // Pasos del arpegio que suena (los del editor si está abierto)
+  // Steps of the arpeggio that sounds (the editor's if it is open)
   activeSteps() { return this.menu?.liveSteps() ?? this.patterns[this.rhythmIdx].steps; }
 
   nextUserName() {
@@ -451,10 +451,10 @@ export class ChordPlayer {
     this.onChange();
   }
 
-  // ---- Historial y recomendaciones ----
+  // ---- History and recommendations ----
   addHistory(roman, mods = []) {
     const info = chordInfo(this.mode, roman);
-    // Con maj<>min el acorde que suena cambia de calidad, y así lo ve el modelo
+    // With maj<>min the sounding chord changes quality, and the model sees it that way
     const quality = mods.includes("swap") ? (info.quality === "maj" ? "min" : "maj") : info.quality;
     const name = BASE_NOTES[(this.baseIdx + info.interval) % 12] + (quality === "min" ? "m" : "");
     this.history.push({ roman, token: tokenFor(info.interval, quality), name });
@@ -469,7 +469,7 @@ export class ChordPlayer {
     this.onChange();
   }
 
-  // Pasa un símbolo del modelo a la tecla que lo toca en el modo actual (o null si no hay)
+  // Maps a model symbol to the key that plays it in the current mode (or null if none)
   mapToken({ token, pct }) {
     if (token === "*E*") return { token, pct, end: true, roman: null, name: "fin" };
     const t = parseToken(token);
@@ -503,18 +503,18 @@ export class ChordPlayer {
       const items = p.items.map((it) => this.mapToken(it));
       this.reco = { source: "ai", file, order: p.order, context: p.context, items };
       if (logIt) {
-        const txt = items.map((i) => `${i.token} ${i.pct}%${i.roman ? "" : " (fuera)"}`).join(", ");
-        this.log(`AI [${file}, orden ${p.order}]: ${txt || "sin datos"}`);
+        const txt = items.map((i) => `${i.token} ${i.pct}%${i.roman ? "" : " (not in mode)"}`).join(", ");
+        this.log(`AI [${file}, order ${p.order}]: ${txt || "no data"}`);
       }
     } catch (err) {
       if (seq !== this.recoSeq) return;
       this.reco = { source: "error", file, error: String(err.message || err), items: [] };
-      this.log(`No se pudo cargar models/${file}: ${this.reco.error}`, "sys");
+      this.log(`Could not load models/${file}: ${this.reco.error}`, "sys");
     }
     this.onChange();
   }
 
-  // grado -> intensidad 0..1 para LEDs y barras
+  // degree -> intensity 0..1 for LEDs and bars
   recoLevels() {
     const out = new Map();
     const items = this.reco.items.filter((i) => i.roman);
@@ -527,7 +527,7 @@ export class ChordPlayer {
     return out;
   }
 
-  // ---- Modo ritmo (start_rhythm / process_rhythm / stop_rhythm) ----
+  // ---- Rhythm mode (start_rhythm / process_rhythm / stop_rhythm) ----
   setRhythmMode(on) {
     if (on === this.rhythmMode) return;
     Object.keys(this.chordNotes).forEach((r) => this.stopChord(r));
@@ -549,7 +549,7 @@ export class ChordPlayer {
     this.onChange();
   }
 
-  // Tempo en BPM: un paso de duración 1 dura un pulso, time_step = 60 / BPM
+  // Tempo in BPM: a step of length 1 lasts one beat, time_step = 60 / BPM
   get timeStep() { return 60 / this.bpm; }
 
   setBpm(bpm) {
@@ -570,7 +570,7 @@ export class ChordPlayer {
       const notes = this.notesFor(chord);
       r.stepIdx = r.step - 1;
       this.onChange();
-      // idx -1 = silencio; una nota que el acorde no tiene (4.ª en una tríada) tampoco suena
+      // idx -1 = rest; a note the chord does not have (the 4th in a triad) is silent too
       if (idx >= 0 && idx < notes.length) {
         const playing = notes[idx];
         r.note = playing;

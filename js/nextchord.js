@@ -1,4 +1,4 @@
-// Port de nextchord.py
+// Port of nextchord.py
 export const CHORD_PROGRESSIONS = {
   Ionian: [["I", "IV", "V", "I"], ["I", "V", "vi", "IV"], ["I", "vi", "IV", "V"], ["I", "IV", "vi", "V"], ["I", "ii", "IV", "V"]],
   Dorian: [["i", "IV", "v", "i"], ["i", "ii", "v", "i"], ["i", "IV", "VII", "i"], ["i", "III", "VII", "i"], ["i", "v", "IV", "i"]],
@@ -10,8 +10,8 @@ export const CHORD_PROGRESSIONS = {
   DrumMode: [["I", "II", "III", "IV"], ["I", "III", "II", "IV"], ["I", "IV", "II", "III"]],
 };
 
-// chord_to_function() de code.py, ampliado a minúsculas y "°" para que
-// los grados de los botones (siempre en mayúsculas) casen con las progresiones.
+// chord_to_function() from code.py, extended to lowercase and "°" so that
+// the button degrees (always uppercase) match the progressions.
 export function chordToFunction(chord) {
   const r = chord.replace("°", "").replace("7", "").toUpperCase();
   const i = ["I", "II", "III", "IV", "V", "VI", "VII"].indexOf(r);

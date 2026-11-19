@@ -1,4 +1,4 @@
-// Salida Web MIDI opcional: el ChordPlayer real es un dispositivo USB-MIDI.
+// Optional Web MIDI output: the real ChordPlayer is a USB-MIDI device.
 export class MidiOut {
   constructor(onChange) {
     this.access = null;
@@ -24,7 +24,7 @@ export class MidiOut {
   select(id) {
     this.port = this.outputs().find((o) => o.id === id) || null;
     if (this.port) {
-      // initialize_midi_channels(): All Notes Off, Program 0, volumen máx., pan centrado
+      // initialize_midi_channels(): All Notes Off, Program 0, max volume, centered pan
       this.send([0xb0, 123, 0]);
       this.send([0xc0, 0]);
       this.send([0xb0, 7, 127]);

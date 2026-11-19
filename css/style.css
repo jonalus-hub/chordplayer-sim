@@ -1,4 +1,4 @@
-/* Aparato a lo ancho arriba; acorde, recomendaciones y panel debajo */
+/* Device full width at the top; chord, recommendations and panel below */
 :root {
   --bg: #e7e4df;
   --surface: #f6f4f1;
@@ -12,7 +12,7 @@
   --console-bg: #17161a;
   --console-ink: #cfe9d6;
   --console-dim: #7e8a82;
-  /* El aparato tiene colores fijos: carcasa impresa gris grafito, teclas claras con grado en azul */
+  /* The device has fixed colours: graphite printed case, light keys with the degree in blue */
   --case: #2b2e35;
   --case-hi: #3a3e47;
   --case-edge: #17181c;
@@ -56,13 +56,13 @@ header.top h1 span { color: var(--accent); }
 header.top p { margin: 0; color: var(--muted); max-width: 62ch; }
 .fw { font: 500 12px var(--font-mono); color: var(--muted); margin-top: 4px; }
 
-/* ---------- Aparato ---------- */
+/* ---------- Device ---------- */
 .stage { display: grid; gap: 10px; min-width: 0; }
 .device-root { min-width: 0; }
 .caption { margin: 0; font-size: 13px; color: var(--muted); }
 .device {
   position: relative; width: 100%;
-  /* Sin selección de texto ni menú de "mantener pulsado" al tocar el aparato */
+  /* No text selection or long-press menu when touching the device */
   user-select: none; -webkit-user-select: none; -webkit-touch-callout: none;
 }
 .device[data-layout="wide"] {
@@ -98,7 +98,7 @@ header.top p { margin: 0; color: var(--muted); max-width: 62ch; }
 }
 .device[data-layout="stacked"] .usb { right: calc(8 * var(--mm)); }
 
-/* Encoders KY-040: moleteado que gira con --rot */
+/* KY-040 encoders: knurling that turns with --rot */
 .knob {
   --rot: 0deg;
   border-radius: 50%; cursor: grab; touch-action: none; user-select: none;
@@ -107,7 +107,7 @@ header.top p { margin: 0; color: var(--muted); max-width: 62ch; }
 }
 .knob.grab { cursor: grabbing; }
 .knob.pushed { transform: scale(0.94); }
-/* Pulsación larga: el anillo se llena en 1 s y entonces se abre el menú */
+/* Long press: the ring fills in 1 s and then the menu opens */
 @property --hold { syntax: "<angle>"; inherits: false; initial-value: 0deg; }
 .knob-ring {
   position: absolute; inset: -24%; border-radius: 50%; pointer-events: none; opacity: 0;
@@ -115,7 +115,7 @@ header.top p { margin: 0; color: var(--muted); max-width: 62ch; }
   -webkit-mask: radial-gradient(circle, transparent 60%, #000 62% 70%, transparent 72%);
   mask: radial-gradient(circle, transparent 60%, #000 62% 70%, transparent 72%);
 }
-.knob.holding .knob-ring { opacity: 1; animation: knob-hold 1s linear forwards; /* = HOLD_MS de device.js */ }
+.knob.holding .knob-ring { opacity: 1; animation: knob-hold 1s linear forwards; /* = HOLD_MS in device.js */ }
 @keyframes knob-hold { from { --hold: 0deg; } to { --hold: 360deg; } }
 .knob-cap {
   position: absolute; inset: 17%; border-radius: 50%;
@@ -125,12 +125,12 @@ header.top p { margin: 0; color: var(--muted); max-width: 62ch; }
 .knob-mark {
   position: absolute; left: 50%; top: 9%; width: calc(0.7 * var(--mm)); height: 34%;
   margin-left: calc(-0.35 * var(--mm)); border-radius: 2px; background: #f4f5f7;
-  /* gira alrededor del centro del mando: (50% − 9%) / 34% ≈ 120% */
+  /* turns around the centre of the knob: (50% − 9%) / 34% ≈ 120% */
   transform-origin: 50% 120%;
   transform: rotate(var(--rot));
 }
 
-/* OLED 2.42": cristal 62×34 mm, zona activa 55×27.5 mm */
+/* 2.42" OLED: 62×34 mm glass, 55×27.5 mm active area */
 .oled {
   background: linear-gradient(160deg, #0f1216, #050608 60%);
   border-radius: calc(1.2 * var(--mm));
@@ -145,7 +145,7 @@ header.top p { margin: 0; color: var(--muted); max-width: 62ch; }
 }
 
 
-/* Placa y teclas Key_V1_Long (15×29 mm) */
+/* Plate and Key_V1_Long keys (15×29 mm) */
 .plate {
   border-radius: calc(4 * var(--mm));
   background: linear-gradient(180deg, var(--case-hi), var(--plate));
@@ -184,7 +184,7 @@ header.top p { margin: 0; color: var(--muted); max-width: 62ch; }
 .key:focus-visible, .knob:focus-visible,
 button:focus-visible, select:focus-visible, input:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
 
-/* ---------- Debajo del aparato ---------- */
+/* ---------- Below the device ---------- */
 .layout { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr); gap: 22px; align-items: start; }
 @media (max-width: 900px) { .layout { grid-template-columns: minmax(0, 1fr); } }
 .col, .panel { display: grid; gap: 16px; min-width: 0; }
@@ -222,7 +222,7 @@ input[type="range"] { flex: 1; min-width: 120px; }
 .piano .on { background: var(--accent) !important; }
 .piano .w.on small { color: #fff; }
 
-/* Recomendaciones */
+/* Recommendations */
 .history { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
 .history-label { font-size: 13px; color: var(--muted); }
 .history-list { display: flex; flex-wrap: wrap; gap: 6px; flex: 1; min-width: 0; }
@@ -277,7 +277,7 @@ footer a { color: inherit; text-underline-offset: 2px; }
   .key, .knob { transition: none; }
 }
 
-/* Ampliadores (Mod 1–3): botones redondos bajo la pantalla, con el número en el capuchón */
+/* Modifiers (Mod 1–3): round buttons under the screen, with the number on the cap */
 .mod {
   border: 0; padding: 0; border-radius: 50%; cursor: pointer; touch-action: none; user-select: none;
   -webkit-tap-highlight-color: transparent; display: grid; place-items: center;
@@ -292,7 +292,7 @@ footer a { color: inherit; text-underline-offset: 2px; }
 .mod:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
 .mods { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 8px 12px; align-items: center; font-size: 14px; }
 .mods select { width: 100%; }
-/* Botón Note: capuchón oscuro para distinguirlo de los ampliadores */
+/* Note button: dark cap to tell it apart from the modifiers */
 .mod.note { background: radial-gradient(circle at 40% 32%, #5d626c, #23252a 72%); box-shadow: 0 calc(0.8 * var(--mm)) 0 #0c0d10, 0 calc(1.3 * var(--mm)) calc(1.8 * var(--mm)) rgba(0, 0, 0, 0.5); }
 .mod.note .mod-num { color: #eef0f3; }
 .mod.note.down { box-shadow: 0 calc(0.2 * var(--mm)) 0 #0c0d10, 0 0 0 calc(0.6 * var(--mm)) rgba(var(--led), 0.9), 0 0 calc(3.5 * var(--mm)) rgba(var(--led), 0.6); }

@@ -1,10 +1,10 @@
-// Sintetizador Web Audio que hace de "DAW" al otro lado del cable USB-MIDI.
+// Web Audio synthesizer that plays the "DAW" at the other end of the USB-MIDI cable.
 const mtof = (n) => 440 * Math.pow(2, (n - 69) / 12);
 
 export const TIMBRES = {
-  epiano: { label: "Piano eléctrico", waves: ["sine", "triangle"], detune: 4, attack: 0.005, decay: 0.9, sustain: 0.35, release: 0.35, cutoff: 3200 },
+  epiano: { label: "Electric piano", waves: ["sine", "triangle"], detune: 4, attack: 0.005, decay: 0.9, sustain: 0.35, release: 0.35, cutoff: 3200 },
   pad: { label: "Pad", waves: ["sawtooth", "sawtooth"], detune: 9, attack: 0.25, decay: 0.6, sustain: 0.8, release: 0.9, cutoff: 1500 },
-  organ: { label: "Órgano", waves: ["square", "sine"], detune: 1200, attack: 0.01, decay: 0.05, sustain: 0.9, release: 0.08, cutoff: 2400 },
+  organ: { label: "Organ", waves: ["square", "sine"], detune: 1200, attack: 0.01, decay: 0.05, sustain: 0.9, release: 0.08, cutoff: 2400 },
   pluck: { label: "Pluck", waves: ["sawtooth", "triangle"], detune: 6, attack: 0.002, decay: 0.25, sustain: 0.0, release: 0.2, cutoff: 2600 },
 };
 
@@ -87,7 +87,7 @@ export class Synth {
 
   allOff() { [...this.voices.keys()].forEach((n) => this.noteOff(n)); }
 
-  // Kit GM sencillo para DrumMode (canal 10)
+  // Simple GM kit for DrumMode (channel 10)
   drum(note, velocity = 127) {
     if (!this.ensure()) return;
     const ctx = this.ctx, t = ctx.currentTime, vel = velocity / 127;

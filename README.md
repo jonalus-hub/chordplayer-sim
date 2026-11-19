@@ -1,169 +1,168 @@
 # ChordPlayer Simulator
 
-Simulador web del ChordPlayer (Swyng Daccorder), un controlador MIDI de acordes con Raspberry Pi Pico:
-siete teclas en zigzag para los siete acordes de la escala, encoders para tónica, modo y octava,
-ampliadores de acorde, arpegios editables y recomendaciones de acordes con IA.
+Web simulator of the ChordPlayer (Swyng Daccorder), a MIDI chord controller built on a Raspberry Pi Pico:
+seven keys in a zigzag for the seven chords of the scale, encoders for root, mode and octave,
+chord modifiers, editable arpeggios and AI chord recommendations.
 
-**Ábrelo en el navegador: https://jonalus-hub.github.io/chordplayer-sim/**
+**Open it in your browser: https://jonalus-hub.github.io/chordplayer-sim/**
 
-El sonido sale de un sintetizador del navegador; en Chrome o Edge también puede mandar MIDI a otro
-programa (botón "Conectar Web MIDI").
+Sound comes from a synthesizer in the browser; in Chrome or Edge it can also send MIDI to other
+software (the "Connect Web MIDI" button).
 
-## Ejecutarlo en local
+## Running it locally
 
-Los scripts son módulos ES, así que hay que servir la carpeta por HTTP:
+The scripts are ES modules, so the folder has to be served over HTTP:
 
 ```bash
-python3 -m http.server 8000   # y abre http://localhost:8000
+python3 -m http.server 8000   # then open http://localhost:8000
 ```
 
-## Créditos
+## Credits
 
-- Modelos de acordes entrenados con [Chordonomicon](https://github.com/spyroskantarelis/chordonomicon)
-  (Kantarelis et al., 2024, [arXiv:2410.22046](https://arxiv.org/abs/2410.22046)), licencia MIT.
-- Pantalla con la fuente Terminus de Dimitar Zhekov, licencia SIL Open Font License 1.1.
+- Chord models trained on [Chordonomicon](https://github.com/spyroskantarelis/chordonomicon)
+  (Kantarelis et al., 2024, [arXiv:2410.22046](https://arxiv.org/abs/2410.22046)), MIT license.
+- The screen uses the Terminus font by Dimitar Zhekov, SIL Open Font License 1.1.
 
-## De dónde sale cada parte
+## Where each part comes from
 
-| Parte | Fuente |
+| Part | Source |
 |---|---|
-| Carcasa en barra, OLED a la izquierda, teclas a la derecha | `ChordPlayer_3D/NX V2/Main_ZB.prt` (mayo 2026) |
-| Teclas 15×29 mm en zigzag cada 20 mm, filas a ±11 mm, agujeros de la placa | `20260417_Switch_Mount_Plate_V4_7_buttons_with_Feet.stp` |
-| Tecla con el grado grabado abajo a la derecha | `Key_V1_Long.stp` |
-| 3 encoders KY-040 en columna, cada 25 mm | `20260402_2_Top_Half_RE_Test.stp` |
-| OLED 2.42" 128×64 | `NX V2/Pictures/OLED_Top_View_2.png` (medidas del módulo) |
-| 3 botones bajo la pantalla (ampliadores Mod 1–3) | Los 3 agujeros redondos de `Main_ZB`; su función la definió el usuario (2026-11-19) |
+| Bar-shaped case, OLED on the left, keys on the right | `ChordPlayer_3D/NX V2/Main_ZB.prt` (May 2026) |
+| 15×29 mm keys in a zigzag every 20 mm, rows at ±11 mm, plate holes | `20260417_Switch_Mount_Plate_V4_7_buttons_with_Feet.stp` |
+| Key with the degree engraved bottom right | `Key_V1_Long.stp` |
+| 3 KY-040 encoders in a column, 25 mm apart | `20260402_2_Top_Half_RE_Test.stp` |
+| 2.42" 128×64 OLED | `NX V2/Pictures/OLED_Top_View_2.png` (module dimensions) |
+| 3 buttons under the screen (Mod 1–3 modifiers) | The 3 round holes in `Main_ZB`; their function was defined by the designer (2026-11-19) |
 
-## Qué simula
+## What it simulates
 
-| Firmware / proyecto | Web |
+| Firmware / project | Web |
 |---|---|
-| `chords.py`: 7 modos de tríadas y DrumMode (los 7 modos "7th" se han quitado) | `js/chords.js` |
-| `code.py`: encoders, teclas polifónicas, notas por pad en DrumMode, `update_display_text()` | `js/engine.js`, `js/display.js` |
+| `chords.py`: 7 triad modes and DrumMode (the 7 "7th" modes were removed) | `js/chords.js` |
+| `code.py`: encoders, polyphonic keys, per-pad notes in DrumMode, `update_display_text()` | `js/engine.js`, `js/display.js` |
 | `terminalio.FONT` | `js/font.js` (Terminus 6×12) |
-| `nextchord.py` | `js/nextchord.js` (solo para Lydian y Locrian) |
-| `rhythm.py` | `js/rhythm.js` (patrones como datos editables) |
-| Menú de ajustes y editor de arpegios (propuesta) | `js/arpmenu.js` |
-| Modelos `.bin` de `Chord_AI/export_base_models.py` | `models/*.bin.gz` + `js/ai.js` |
-| Salida USB-MIDI | Sintetizador Web Audio (`js/audio.js`) + Web MIDI opcional (`js/midi.js`) |
-| Carcasa, teclas, encoders | `js/device.js` (geometría en milímetros) |
+| `nextchord.py` | `js/nextchord.js` (only for Lydian and Locrian) |
+| `rhythm.py` | `js/rhythm.js` (patterns as editable data) |
+| Settings menu and arpeggio editor (proposed) | `js/arpmenu.js` |
+| `.bin` models from `Chord_AI/export_base_models.py` | `models/*.bin.gz` + `js/ai.js` |
+| USB-MIDI output | Web Audio synthesizer (`js/audio.js`) + optional Web MIDI (`js/midi.js`) |
+| Case, keys, encoders | `js/device.js` (geometry in millimetres) |
 
-## Recomendaciones con IA (propuesta)
+## AI recommendations (proposed)
 
-Los modelos son cadenas de Markov de orden 1 a 3 entrenadas con Chordonomicon, uno por modo y género.
-Cada `.bin` ocupa 146 224 bytes y está pensado para que la Pico lo lea con `seek()`. Aquí van comprimidos
-con gzip y el navegador los descomprime. Son idénticos byte a byte.
+The models are order-1 to order-3 Markov chains trained on Chordonomicon, one per mode and genre.
+Each `.bin` is 146,224 bytes and is laid out for the Pico to read with `seek()`. Here they are
+gzip-compressed and the browser decompresses them; the bytes are identical.
 
-- Contexto: los 3 últimos acordes tocados, como grado relativo a la tónica (`i`, `IV`, `VIIb`…).
-  Si no hay datos para el orden 3 se baja al 2 y luego al 1, igual que `test_bin_models.py`.
-- Cada predicción se asigna a la tecla que toca ese acorde en el modo actual. Si el acorde no está
-  en el modo (por ejemplo `IV` mayor en Aeolian), se muestra pero no se ilumina ninguna tecla.
-- Modos con modelo: Ionian, Dorian, Phrygian, Mixolydian y Aeolian.
-  Lydian y Locrian no aparecen en el dataset y usan `nextchord.py`.
-- Géneros: todos, pop, rock, pop rock, alternative, country, electronic, jazz, metal, punk, rap, reggae, soul.
-  En el aparato se cambia pulsando el encoder Modo; la OLED lo muestra 1,5 s en la línea de modo.
-- Se ven como LEDs bajo las teclas y como barras bajo los nombres en la OLED (ambas cosas se pueden apagar).
+- Context: the last 3 chords played, as degrees relative to the root (`i`, `IV`, `VIIb`…).
+  If order 3 has no data it falls back to order 2 and then 1, like `test_bin_models.py`.
+- Each prediction is mapped to the key that plays that chord in the current mode. If the chord is not
+  in the mode (for example a major `IV` in Aeolian), it is listed but no key lights up.
+- Modes with a model: Ionian, Dorian, Phrygian, Mixolydian and Aeolian.
+  Lydian and Locrian are not in the dataset and use `nextchord.py`.
+- Genres: all, pop, rock, pop rock, alternative, country, electronic, jazz, metal, punk, rap, reggae, soul.
+  On the device it changes with a press of the Mode encoder; the OLED shows it for 1.5 s in place of the mode.
+- They show up as LEDs under the keys and as bars under the names on the OLED (both can be turned off).
 
-## Ajustes (propuesta)
+## Settings (proposed)
 
-Se abren manteniendo **cualquier encoder 1 s** (un anillo se va llenando alrededor). El encoder **Base**
-(arriba) elige la fila y el **Modo** (medio) cambia su valor al momento, sin clic; en la OLED el valor que
-se puede cambiar va entre `< >`. Un toque solo hace falta para abrir el editor (fila Pattern), crear un
-patrón (New pattern) o salir (Exit). Mantener 1 s otra vez cierra el menú; fuera del editor también se
-cierra solo tras 20 s sin tocar nada.
+They open by holding **any encoder for 1 s** (a ring fills up around it). The **Base** encoder (top)
+picks the row and the **Mode** encoder (middle) changes its value right away, with no click; on the OLED
+the value that can be changed sits between `< >`. A press is only needed to open the editor (Pattern row),
+create a pattern (New pattern) or leave (Exit). Holding for 1 s again closes the menu; outside the editor
+it also closes by itself after 20 s untouched.
 
-| Fila | Qué hace |
+| Row | What it does |
 |---|---|
-| Arp | Activa el modo arpegio (en el firmware, el botón GP14) |
-| Tempo | 40–300 BPM, de 1 en 1 (en el firmware, el potenciómetro GP28 fija `time_step` en segundos) |
-| Pattern | Arpegio activo (Modo lo cambia y suena al momento); un toque lo abre en el editor |
-| New pattern | Un toque abre el editor con un patrón nuevo |
-| Mod 1–3 | Qué hace cada ampliador |
-| Note | Botón Note: **Gate** (la nota suena mientras se pulsa) o **Sustain** (se acumulan mientras se mantiene el acorde) |
-| Screen | Pantalla principal: **Chords** (los 7 acordes en zigzag, como el firmware) o **Keys** (teclado) |
-| Exit | Cierra |
+| Arp | Turns arpeggio mode on (on the firmware, the GP14 button) |
+| Tempo | 40–300 BPM, in steps of 1 (on the firmware, the GP28 potentiometer sets `time_step` in seconds) |
+| Pattern | Active arpeggio (Mode changes it and it plays right away); a press opens it in the editor |
+| New pattern | A press opens the editor with a new pattern |
+| Mod 1–3 | What each modifier does |
+| Note | Note button: **Gate** (the note sounds while pressed) or **Sustain** (notes build up while the chord is held) |
+| Screen | Main screen: **Chords** (the 7 chords in a zigzag, like the firmware) or **Keys** (keyboard) |
+| Exit | Closes |
 
-## Vista de teclado (propuesta)
+## Keyboard view (proposed)
 
-Con Screen = Keys, la pantalla principal mantiene la línea de tónica, modo y octava, y debajo dibuja un teclado
-de 2 octavas con las notas que suenan en negativo (blancas rellenas, negras huecas). La última línea dice qué
-acorde suena (`Dm7`, `C + Em`…). El teclado empieza en el Do de la octava elegida y, si un acorde no cabe, se
-recoloca en el Do bajo su nota más grave; si aun así algo queda fuera por arriba, el nombre lleva ` >`.
-Con el arpegio se ve la nota que suena en cada paso. En DrumMode se ven siempre los nombres de los pads.
+With Screen = Keys, the main screen keeps the root, mode and octave line, and below it draws a 2-octave
+keyboard with the sounding notes inverted (white keys filled, black keys hollow). The last line names the
+chord that is sounding (`Dm7`, `C + Em`…). The keyboard starts at the C of the chosen octave and, if a chord
+does not fit, moves to the C below its lowest note; if something is still off the top, the name gets a ` >`.
+With the arpeggio you can see the note of each step. DrumMode always shows the pad names.
 
-## Arpegios editables (propuesta)
+## Editable arpeggios (proposed)
 
-Un patrón es una lista de pasos `[nota, duración]`: la nota es la posición en el acorde (1–4, o `-` = silencio)
-y la duración va en pulsos al tempo de Ajustes (1/4, 1/2, 3/4, 1, 1.5, 2, 3, 4; 1 = una negra). Máximo 16 pasos.
+A pattern is a list of `[note, length]` steps: the note is the position in the chord (1–4, or `-` = rest)
+and the length is in beats at the Settings tempo (1/4, 1/2, 3/4, 1, 1.5, 2, 3, 4; 1 = a quarter note). Up to 16 steps.
 
-Al abrir el editor (toque en Pattern o New pattern) se enciende el modo arpegio, así que manteniendo un
-acorde se oye cada cambio. En el editor:
+Opening the editor (a press on Pattern or New pattern) turns arpeggio mode on, so every change can be heard
+while holding a chord. In the editor:
 
-- **Base**: paso seleccionado. Pasado el último se llega a las acciones **Add**, **Del**, **Save**, **Back**.
-- **Modo**: nota del paso (aquí se edita el orden de las notas).
-- **Octava**: duración del paso.
-- **Toque sobre un paso**: lo coge para moverlo con Base; otro toque lo suelta.
-- **Save**: los 4 presets del firmware no se sobrescriben; al guardarlos se crea `User N`. Los `User N` sí se sobrescriben.
-- **Back** o cerrar el menú sin guardar descarta los cambios (el título lleva `*` mientras hay cambios).
+- **Base**: selected step. Past the last one come the actions **Add**, **Del**, **Save**, **Back**.
+- **Mode**: the step's note (this is where the note order is edited).
+- **Octave**: the step's length.
+- **Press on a step**: picks it up to move it with Base; another press drops it.
+- **Save**: the 4 firmware presets are never overwritten; saving one creates `User N`. `User N` presets are overwritten.
+- **Back**, or closing the menu without saving, discards the changes (the title has a `*` while there are changes).
 
-Los presets de usuario se guardan en el navegador (`localStorage`); en el aparato irían a un JSON en la flash,
-lo que obligaría a que `boot.py` monte la unidad con escritura para el código. Desde el panel web se pueden borrar.
+User presets are stored in the browser (`localStorage`); on the device they would go to a JSON file in flash,
+which would require `boot.py` to mount the drive writable for the code. They can be deleted from the web panel.
 
-## Ampliadores de acorde (propuesta)
+## Chord modifiers (proposed)
 
-Tres botones bajo la pantalla. Se mantiene uno (o varios) **antes** de tocar la tecla de acorde; si se pulsan
-después, el acorde que ya suena no cambia. Cada uno hace lo que diga Ajustes → Mod 1–3 (se guarda en el navegador):
+Three buttons under the screen. Hold one (or several) **before** playing the chord key; pressed afterwards,
+they do not change the chord that is already sounding. Each one does whatever Settings → Mod 1–3 says (saved in the browser):
 
-| Opción | Efecto |
+| Option | Effect |
 |---|---|
-| 7th | Séptima del modo (Dm → Dm7, G → G7, C → CM7 en Ionian) |
-| add9 | Novena del modo; con 7th se nombra 9 (CM9, Dm9) |
-| add6 | Sexta del modo |
-| sus2 / sus4 | Segunda o cuarta en lugar de la tercera |
-| 5 (red) | Reducido: raíz, quinta y octava, sin tercera |
-| maj<>min | Cambia mayor ↔ menor (menor y disminuido pasan a mayor); la IA lo ve como el acorde que suena |
-| inv 1 / inv 2 | Primera o segunda inversión |
-| bass | Añade la raíz una octava abajo |
+| 7th | Seventh from the mode (Dm → Dm7, G → G7, C → CM7 in Ionian) |
+| add9 | Ninth from the mode; with 7th it is named 9 (CM9, Dm9) |
+| add6 | Sixth from the mode |
+| sus2 / sus4 | Second or fourth instead of the third |
+| 5 (red) | Reduced: root, fifth and octave, no third |
+| maj<>min | Swaps major ↔ minor (minor and diminished become major); the AI sees it as the chord that sounds |
+| inv 1 / inv 2 | First or second inversion |
+| bass | Adds the root an octave below |
 
-Por defecto: Mod 1 = 7th, Mod 2 = add9, Mod 3 = 5. Mientras hay un ampliador pulsado, la cabecera de la OLED
-lo dice en el sitio del modo (`+7th+add9`, centrado). El arpegio recorre las notas del acorde ampliado.
-Para cambiar qué hace cada uno: Ajustes, Base hasta Mod 1–3 y Modo para elegir la opción.
+Defaults: Mod 1 = 7th, Mod 2 = add9, Mod 3 = 5. While a modifier is held, the OLED header shows it in place
+of the mode (`+7th+add9`, centered). The arpeggio walks through the notes of the extended chord.
+To change what each one does: Settings, Base down to Mod 1–3 and Mode to pick the option.
 
-## Botón Note: arpegio a mano (propuesta)
+## Note button: hand-played arpeggio (proposed)
 
-Un cuarto botón, a la derecha de los ampliadores (en el CAD de mayo de 2026 todavía no tiene agujero).
+A fourth button, to the right of the modifiers (the May 2026 CAD has no hole for it yet).
 
-- Si **Note está pulsado al tocar la tecla de acorde**, solo suena la primera nota (la más grave).
-- Después, **cada pulsación de Note toca la nota siguiente**; tras la última vuelve a la primera.
-- Si **el acorde ya suena entero** (Note no estaba pulsado al tocarlo), el acorde sigue sonando y cada pulsación de
-  Note vuelve a tocar encima una de sus notas, empezando por la primera (se manda otro Note On de esa nota). Con
-  varios acordes, Note va con el último tocado; el arpegio automático, si sonaba, también sigue.
-- Ajustes → **Note** elige qué pasa con las notas ya tocadas:
-  - **Gate** (por defecto): cada nota suena mientras Note está pulsado, así que el ritmo y la duración van a mano.
-  - **Sustain**: las notas se acumulan y siguen sonando mientras se mantiene la tecla de acorde; al volver a una
-    nota que ya suena, se vuelve a tocar.
-- En los dos modos, **soltar la tecla de acorde apaga todas las notas** tocadas con Note.
-- Se combina con los ampliadores (Note + 7th recorre las 4 notas) y tiene prioridad sobre el arpegio
-  automático para ese acorde. Mientras está pulsado, la cabecera muestra `+Note`.
-- En el teclado del ordenador es la `R`.
+- If **Note is held when the chord key is pressed**, only the first (lowest) note sounds.
+- After that, **each press of Note plays the next note**; after the last one it goes back to the first.
+- If **the chord is already sounding in full** (Note was not held when it was played), the chord keeps sounding and
+  each press of Note plays one of its notes again on top, starting from the first (another Note On for that note).
+  With several chords, Note goes with the last one played; the automatic arpeggio, if running, also keeps going.
+- Settings → **Note** picks what happens to the notes already played:
+  - **Gate** (default): each note sounds while Note is held, so both rhythm and length are played by hand.
+  - **Sustain**: the notes build up and keep sounding while the chord key is held; coming back to a note
+    that is already sounding replays it.
+- In both modes, **releasing the chord key stops every note** played with Note.
+- It combines with the modifiers (Note + 7th walks the 4 notes) and takes priority over the automatic
+  arpeggio for that chord. While it is held, the header shows `+Note`.
+- On the computer keyboard it is `R`.
 
-## Diferencias con el firmware `fw-2026-04-07`
+## Differences from firmware `fw-2026-04-07`
 
-- Sin los 7 modos "7th" (Ionian 7th…Locrian 7th): el encoder Modo recorre los 7 modos y DrumMode, y la
-  séptima se añade con el ampliador 7th.
+- No 7 "7th" modes (Ionian 7th…Locrian 7th): the Mode encoder goes through the 7 modes and DrumMode, and the
+  seventh is added with the 7th modifier.
+- The recommendations, genre, LEDs and OLED bars are proposals: the firmware does not call `update_chord_history()`.
+- Turning Base, Mode or Octave stops every chord and replays the ones still held. The firmware only retriggers the first one, and changing mode stops nothing (notes can hang).
+- The case has no Rhythm button (GP14), Pattern button (GP15) or potentiometer (GP28) from the firmware: their functions are in Settings.
+- The tempo is in BPM (40–300) and `time_step` = 60 / BPM. The firmware reads `time_step` from the potentiometer (0–1 s) and only changes it if the ADC moves by more than 10000/65535.
+- A step with a note the chord does not have (the 4th in a triad) is a rest and lasts its length; the firmware skips it without waiting.
+- Drum pad notes are clamped to 0–127.
+- The OLED header is a single line without labels (root on the left, mode centered and octave on the right), instead of `Base: C` and `Mode: Ionian`; the chord rows move up 4 px.
 
-- Las recomendaciones, el género, los LEDs y las barras de la OLED son propuestas: el firmware no llama a `update_chord_history()`.
-- Al girar Base, Modo u Octava se cortan todos los acordes y se vuelven a tocar los que siguen pulsados. El firmware solo reengancha el primero, y al cambiar de modo no apaga nada (puede dejar notas colgadas).
-- La carcasa no tiene el botón Ritmo (GP14), el botón Patrón (GP15) ni el potenciómetro (GP28) del firmware: sus funciones están en Ajustes.
-- El tempo va en BPM (40–300) y `time_step` = 60 / BPM. El firmware lee `time_step` del potenciómetro (0–1 s) y solo lo cambia si el ADC varía más de 10000/65535.
-- Un paso con una nota que el acorde no tiene (la 4.ª en una tríada) es silencio y dura lo suyo; el firmware lo salta sin esperar.
-- Las notas de los pads de batería se limitan a 0–127.
-- La cabecera de la OLED va en una sola línea y sin rótulos (tónica a la izquierda, modo centrado y octava a la derecha), en lugar de `Base: C` y `Mode: Ionian`; las filas de acordes suben 4 px.
+## Controls
 
-## Controles
+Mouse or finger: drag an encoder (right or up = clockwise), use the scroll wheel or the arrow keys; a click presses the shaft
+and holding it for 1 s opens Settings. The modifiers are held with another finger while playing the key.
 
-Ratón o dedo: arrastra un encoder (derecha o arriba = horario), usa la rueda o las flechas; un clic pulsa el eje
-y mantenerlo 1 s abre Ajustes. Los ampliadores se mantienen con otro dedo mientras se toca la tecla.
-
-`A S D F G H J` (o `1`–`7`) teclas I–VII · `Z/X` Base · `C/V` Modo · `B/N` Octava · `M` pulsar Modo (género; mantener 1 s = Ajustes) ·
-`Q/W/E` mantener Mod 1/2/3 · `R` Note · atajos del simulador: `K` arpegio, `L` patrón siguiente, `,`/`.` tempo.
+`A S D F G H J` (or `1`–`7`) keys I–VII · `Z/X` Base · `C/V` Mode · `B/N` Octave · `M` press Mode (genre; hold 1 s = Settings) ·
+`Q/W/E` hold Mod 1/2/3 · `R` Note · simulator shortcuts: `K` arpeggio, `L` next pattern, `,`/`.` tempo.

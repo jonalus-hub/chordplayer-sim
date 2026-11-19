@@ -1,8 +1,8 @@
-// Recomendaciones con los modelos Markov de Chord_AI (export_base_models.py).
-// Cada modelo es un .bin plano de 146 224 bytes, pensado para que la Pico lo lea con seek():
-//   orden 1: 26 bloques · orden 2: 26² bloques · orden 3: 26³ bloques
-//   bloque = 4 × (id de acorde, porcentaje); id 255 = vacío
-// Aquí se sirven comprimidos (.bin.gz) y se descomprimen en el navegador.
+// Recommendations with the Chord_AI Markov models (export_base_models.py).
+// Each model is a flat 146,224-byte .bin, designed for the Pico to read with seek():
+//   order 1: 26 blocks · order 2: 26² blocks · order 3: 26³ blocks
+//   block = 4 × (chord id, percentage); id 255 = empty
+// Here they are served compressed (.bin.gz) and decompressed in the browser.
 
 export const VOCAB = [
   "*S*", "*E*",
@@ -12,7 +12,7 @@ export const VOCAB = [
 
 export const GENRES = ["all", "pop", "rock", "pop_rock", "alternative", "country", "electronic", "jazz", "metal", "punk", "rap", "reggae", "soul"];
 
-// Modos del aparato que tienen modelo (Lydian y Locrian no aparecen en el dataset)
+// Device modes that have a model (Lydian and Locrian are not in the dataset)
 const MODEL_MODES = new Set(["Ionian", "Dorian", "Phrygian", "Mixolydian", "Aeolian"]);
 
 const N = VOCAB.length;
@@ -27,18 +27,18 @@ export function modelFile(mode, genre) {
 
 const cache = new Map();
 
-// El servidor sirve models/<file>.gz. La versión de artefacto de Claude (scripts/build_artifact.py)
-// lleva cada modelo como módulo JS en base64 (models/<file>.js), porque solo publica tipos web.
+// The web server serves models/<file>.gz. The Claude artifact build (scripts/build_artifact.py)
+// ships each model as a base64 JS module (models/<file>.js), because artifacts only publish web types.
 const MODULE_MODELS = document.querySelector('meta[name="chordplayer-models"]')?.content === "js";
 
 async function gzBytes(file) {
   if (!MODULE_MODELS) {
     try {
       const r = await fetch(`models/${file}.gz`);
-      // Cualquier servidor que dé el archivo (y no una página de error en HTML) vale;
-      // si lo manda ya descomprimido, loadModel lo detecta.
+      // Any server that returns the file (and not an HTML error page) will do;
+      // if it arrives already decompressed, loadModel notices.
       if (r.ok && !(r.headers.get("content-type") || "").startsWith("text/")) return new Uint8Array(await r.arrayBuffer());
-    } catch { /* sin servidor de .gz: probar el módulo */ }
+    } catch { /* no .gz server: try the module */ }
   }
   const m = await import(`../models/${file}.js`);
   return Uint8Array.from(atob(m.default), (c) => c.charCodeAt(0));
@@ -48,12 +48,12 @@ export function loadModel(file) {
   if (!cache.has(file)) {
     const p = gzBytes(file)
       .then((bytes) => {
-        // 1f 8b = cabecera gzip; si no está, el servidor ya lo descomprimió
+        // 1f 8b = gzip header; without it, the server already decompressed the file
         if (bytes[0] !== 0x1f || bytes[1] !== 0x8b) return bytes;
         return new Response(new Blob([bytes]).stream().pipeThrough(new DecompressionStream("gzip"))).arrayBuffer().then((buf) => new Uint8Array(buf));
       })
       .then((data) => {
-        if (data.length !== 146224) throw new Error(`modelo con tamaño inesperado (${data.length} bytes)`);
+        if (data.length !== 146224) throw new Error(`model has an unexpected size (${data.length} bytes)`);
         return data;
       });
     p.catch(() => cache.delete(file));
@@ -72,7 +72,7 @@ function readBlock(data, offset) {
   return out;
 }
 
-// Igual que LightweightBinaryPredictor: orden 3, si no hay datos orden 2, y si no orden 1
+// Same as LightweightBinaryPredictor: order 3, then order 2 if there is no data, then order 1
 export function predict(data, history) {
   const ctx = ["*S*", "*S*", "*S*", ...history].slice(-3);
   const [c3, c2, c1] = ctx.map((t) => VOCAB.indexOf(t));
@@ -89,7 +89,7 @@ export function predict(data, history) {
   return { order: 0, items: [], context: ctx };
 }
 
-// Grado del aparato -> símbolo del modelo (mayúscula = mayor; disminuidos cuentan como menores)
+// Device degree -> model symbol (uppercase = major; diminished counts as minor)
 export function tokenFor(interval, quality) {
   const t = DEGREES[interval % 12];
   return quality === "maj" ? t : t.replace(/^[IV]+/, (r) => r.toLowerCase());

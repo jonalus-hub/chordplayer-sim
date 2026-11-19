@@ -1,31 +1,31 @@
-// El aparato dibujado a escala (milímetros) a partir del CAD:
-//  - Main_ZB.prt (mayo 2026): barra con la OLED a la izquierda y 7 teclas rectangulares a la derecha
-//  - Switch_Mount_Plate_V4 (abril 2026): placa 150×60, teclas en zigzag cada 20 mm, filas a ±11 mm
-//  - Key_V1_Long: tecla 15×29 mm con el grado grabado abajo a la derecha
-//  - Top_Half_RE_Test (abril 2026): 3 encoders KY-040 en columna, cada 25 mm
-// Los 3 agujeros bajo la pantalla son los ampliadores de acorde (MOD 1–3). El botón Note,
-// a su derecha, es una propuesta: en el CAD de mayo de 2026 todavía no tiene agujero.
+// The device drawn to scale (millimetres) from the CAD:
+//  - Main_ZB.prt (May 2026): a bar with the OLED on the left and 7 rectangular keys on the right
+//  - Switch_Mount_Plate_V4 (April 2026): 150×60 plate, keys in a zigzag every 20 mm, rows at ±11 mm
+//  - Key_V1_Long: 15×29 mm key with the degree engraved bottom right
+//  - Top_Half_RE_Test (April 2026): 3 KY-040 encoders in a column, 25 mm apart
+// The 3 holes under the screen are the chord modifiers (MOD 1–3). The Note button to their
+// right is a proposal: the May 2026 CAD has no hole for it yet.
 import { ROMANS } from "./chords.js";
 
 const CASE_H = 78;
-const PANEL_A = { w: 108, h: CASE_H };   // encoders, OLED y controles
-const PANEL_B = { w: 164, h: CASE_H };   // placa de teclas
+const PANEL_A = { w: 108, h: CASE_H };   // encoders, OLED and controls
+const PANEL_B = { w: 164, h: CASE_H };   // key plate
 const WIDE_W = PANEL_A.w + PANEL_B.w;    // 272 mm
 const STACK_GAP_PX = 14;
 
 const ENCODERS = [
   { id: "base", label: "Base", x: 15, y: 14 },
-  { id: "mode", label: "Modo", x: 15, y: 39 },
+  { id: "mode", label: "Mode", x: 15, y: 39 },
   { id: "octave", label: "Oct", x: 15, y: 64 },
 ];
 const KNOB_D = 13;
 const OLED = { x: 63, y: 28, w: 62, h: 34, aw: 55, ah: 27.5 };
-// Ampliadores de acorde: se mantienen pulsados antes de tocar la tecla
+// Chord modifiers: held down before playing the key
 const MODS = [{ x: 40, y: 60 }, { x: 55, y: 60 }, { x: 70, y: 60 }];
 const NOTE_BTN = { x: 88, y: 60 };
 const MOD_D = 9;
 
-// Botón que se mantiene pulsado: avisa al pulsar y al soltar (también con varios dedos)
+// A button that is held: reports press and release (also with several fingers)
 function holdButton(btn, onDown, onUp) {
   let pointer = null;
   btn.addEventListener("pointerdown", (ev) => {
@@ -43,7 +43,7 @@ function holdButton(btn, onDown, onUp) {
 }
 const PLATE = { x: 82, y: 39, w: 150, h: 60 };
 const KEY = { w: 15, h: 29 };
-// Agujeros Ø3.5 de la placa V4 (coordenadas del STEP, y hacia arriba)
+// Ø3.5 holes in the V4 plate (STEP coordinates, y pointing up)
 const PLATE_HOLES = [[-71, -15], [-40, -15], [-20, 15], [0, -15], [20, 15], [40, -15], [60, 15], [71, -15]];
 const KEYS_PC = ["A", "S", "D", "F", "G", "H", "J"];
 
@@ -66,8 +66,8 @@ export function buildDevice(root, handlers) {
   const b = el("div", "dev-panel panel-b");
   device.append(a, b);
   root.append(device);
-  // En pantallas táctiles (p. ej. Surface con Windows), mantener el dedo o tocar con dos dedos
-  // cuenta como clic derecho: sin esto saldría el menú contextual al mantener una tecla.
+  // On touch screens (e.g. a Surface with Windows), a long press or a two-finger tap counts
+  // as a right click: without this, holding a key would open the context menu.
   device.addEventListener("contextmenu", (e) => e.preventDefault());
   device.addEventListener("selectstart", (e) => e.preventDefault());
   device.addEventListener("dragstart", (e) => e.preventDefault());
@@ -77,7 +77,7 @@ export function buildDevice(root, handlers) {
   for (const e of ENCODERS) {
     const knob = part("div", "knob", { x: e.x, y: e.y, w: KNOB_D, h: KNOB_D }, {
       tabindex: "0", role: "spinbutton", "aria-label": `Encoder ${e.label}`,
-      title: `Encoder ${e.label}: arrastra, rueda o flechas · clic o Enter = pulsar · mantener 1 s = menú`,
+      title: `${e.label} encoder: drag, scroll wheel or arrow keys · click or Enter = press · hold 1 s = menu`,
     });
     knob.append(el("span", "knob-ring"), el("span", "knob-cap"), el("span", "knob-mark"));
     a.append(part("span", "silk", { x: e.x, y: e.y + 9.6, w: 16, h: 3.2 }, { text: e.label }));
@@ -92,15 +92,15 @@ export function buildDevice(root, handlers) {
 
   // ---------- OLED ----------
   const glass = part("div", "oled", { x: OLED.x, y: OLED.y, w: OLED.w, h: OLED.h });
-  const canvas = el("canvas", "oled-canvas", { width: "128", height: "64", "aria-label": "Pantalla OLED 128×64" });
+  const canvas = el("canvas", "oled-canvas", { width: "128", height: "64", "aria-label": "128×64 OLED screen" });
   canvas.style.setProperty("--aw", OLED.aw);
   canvas.style.setProperty("--ah", OLED.ah);
   glass.append(canvas);
   a.append(glass);
 
-  // ---------- Ampliadores (MOD 1–3) y botón Note ----------
+  // ---------- Modifiers (MOD 1–3) and Note button ----------
   const mods = MODS.map((m, i) => {
-    const btn = part("button", "mod", { x: m.x, y: m.y, w: MOD_D, h: MOD_D }, { "aria-label": `Ampliador ${i + 1}` });
+    const btn = part("button", "mod", { x: m.x, y: m.y, w: MOD_D, h: MOD_D }, { "aria-label": `Modifier ${i + 1}` });
     btn.append(el("span", "mod-num", { text: String(i + 1) }));
     holdButton(btn, () => handlers.onModDown(i), () => handlers.onModUp(i));
     a.append(btn);
@@ -108,20 +108,20 @@ export function buildDevice(root, handlers) {
   });
   a.append(part("span", "silk", { x: MODS[1].x, y: MODS[1].y + 8.6, w: 40, h: 3.2 }, { text: "Mod" }));
   const noteBtn = part("button", "mod note", { x: NOTE_BTN.x, y: NOTE_BTN.y, w: MOD_D, h: MOD_D }, {
-    "aria-label": "Note: mantenlo al tocar un acorde y púlsalo para cada nota", title: "Note: mantenlo al tocar un acorde; cada pulsación toca la nota siguiente",
+    "aria-label": "Note: hold it while playing a chord and press it for each note", title: "Note: hold it while playing a chord; each press plays the next note",
   });
   noteBtn.append(el("span", "mod-num", { text: "N" }));
   holdButton(noteBtn, handlers.onNoteDown, handlers.onNoteUp);
   a.append(noteBtn, part("span", "silk", { x: NOTE_BTN.x, y: NOTE_BTN.y + 8.6, w: 16, h: 3.2 }, { text: "Note" }));
 
-  // ---------- Placa y teclas ----------
+  // ---------- Plate and keys ----------
   b.append(part("div", "plate", PLATE));
   for (const [hx, hy] of PLATE_HOLES) b.append(part("span", "hole", { x: PLATE.x + hx, y: PLATE.y - hy, w: 3.5, h: 3.5 }));
   const keys = {};
   ROMANS.forEach((r, i) => {
     const x = PLATE.x - 60 + i * 20;
     const y = PLATE.y + (i % 2 ? -11 : 11);
-    const key = part("button", "key", { x, y, w: KEY.w, h: KEY.h }, { "aria-label": `Acorde ${r}` });
+    const key = part("button", "key", { x, y, w: KEY.w, h: KEY.h }, { "aria-label": `Chord ${r}` });
     key.append(el("span", "pc", { text: KEYS_PC[i] }), el("span", "legend", { text: r }));
     b.append(key);
     keys[r] = key;
@@ -140,7 +140,7 @@ export function buildDevice(root, handlers) {
 
   a.append(el("span", "usb", { "aria-hidden": "true" }));
 
-  // ---------- Escala: milímetros -> píxeles ----------
+  // ---------- Scale: millimetres -> pixels ----------
   const place = (panel, left, top, mm, dims) => {
     panel.style.left = `${left}px`;
     panel.style.top = `${top}px`;
@@ -159,7 +159,7 @@ export function buildDevice(root, handlers) {
       device.style.height = `${CASE_H * mm}px`;
       device.style.setProperty("--mm", `${mm}px`);
     } else {
-      // Vista compacta para móvil: las dos mitades una encima de otra
+      // Compact view for phones: the two halves stacked
       const mmA = Math.min(W / PANEL_A.w, 3.4);
       const mmB = W / PANEL_B.w;
       device.dataset.layout = "stacked";
@@ -175,23 +175,23 @@ export function buildDevice(root, handlers) {
   return { keys, encoders, mods, noteBtn, canvas };
 }
 
-// Encoder sin tope: 20 detents por vuelta como el KY-040.
-// Arrastrar (derecha/arriba = horario), rueda, flechas; clic o Enter = pulsar el eje;
-// mantener pulsado 1 s (sin girar) = pulsación larga.
+// Endless encoder: 20 detents per turn like the KY-040.
+// Drag (right/up = clockwise), scroll wheel, arrow keys; click or Enter = press the shaft;
+// hold for 1 s (without turning) = long press.
 export const HOLD_MS = 1000;
 
 function attachEncoder(knob, { onStep, onPush, onLongPress, detents = 20 }) {
   const stepDeg = 360 / detents;
   const PX_PER_STEP = 14;
   let rot = 0, drag = null, wheelAcc = 0, hold = null;
-  // spin() solo gira el dibujo (para cuando se usa el teclado del ordenador)
+  // spin() only turns the drawing (for when the computer keyboard is used)
   knob.spin = (d) => {
     rot += d * stepDeg;
     knob.style.setProperty("--rot", `${rot}deg`);
   };
   const turn = (d) => { knob.spin(d); onStep(d); };
 
-  // Pulsación: corta al soltar antes de 1 s; larga si se mantiene 1 s
+  // Press: short if released within 1 s; long if held for 1 s
   const holdCancel = () => {
     if (!hold) return;
     clearTimeout(hold.timer);
@@ -233,7 +233,7 @@ function attachEncoder(knob, { onStep, onPush, onLongPress, detents = 20 }) {
     const d = (e.clientX - drag.x) - (e.clientY - drag.y);
     drag.x = e.clientX; drag.y = e.clientY;
     drag.acc += d;
-    // Girar mientras se pulsa no cuenta como pulsación
+    // Turning while pressed does not count as a press
     while (drag.acc >= PX_PER_STEP) { drag.acc -= PX_PER_STEP; holdCancel(); turn(1); }
     while (drag.acc <= -PX_PER_STEP) { drag.acc += PX_PER_STEP; holdCancel(); turn(-1); }
   });
@@ -248,7 +248,7 @@ function attachEncoder(knob, { onStep, onPush, onLongPress, detents = 20 }) {
   knob.addEventListener("wheel", (e) => {
     e.preventDefault();
     const dy = e.deltaMode === 1 ? e.deltaY * 33 : e.deltaY;
-    // Ratón: cada muesca es un detent. Trackpad: se acumulan los deltas pequeños.
+    // Mouse: each notch is one detent. Trackpad: small deltas add up.
     if (Math.abs(dy) >= 40) { wheelAcc = 0; turn(dy < 0 ? 1 : -1); return; }
     wheelAcc += dy;
     if (wheelAcc <= -40) { wheelAcc = 0; turn(1); }

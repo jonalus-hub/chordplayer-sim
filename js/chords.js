@@ -1,5 +1,5 @@
-// Port de chords.py (firmware fw-2026-04-07): 7 modos de tríadas y DrumMode.
-// Los 7 modos "7th" del firmware se han quitado: la séptima se toca con el ampliador 7th.
+// Port of chords.py (firmware fw-2026-04-07): 7 triad modes and DrumMode.
+// The firmware's 7 "7th" modes have been removed: the seventh is played with the 7th modifier.
 
 export const BASE_NOTES = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
 const TRIAD_MODES = ["Ionian", "Dorian", "Phrygian", "Lydian", "Mixolydian", "Aeolian", "Locrian"];
@@ -24,7 +24,7 @@ export function getChordNotes(base, type) {
   return (SHAPES[type] || []).map((i) => base + i);
 }
 
-// [intervalo, tipo] por grado I..VII, igual que CHORD_DATABASE
+// [interval, type] per degree I..VII, as in CHORD_DATABASE
 const DB = {
   "Ionian":         [[0, "Major"], [2, "Minor"], [4, "Minor"], [5, "Major"], [7, "Major"], [9, "Minor"], [11, "Diminished"]],
   "Dorian":         [[0, "Minor"], [2, "Minor"], [3, "Major"], [5, "Major"], [7, "Minor"], [9, "Diminished"], [10, "Major"]],
@@ -35,13 +35,13 @@ const DB = {
   "Locrian":        [[0, "Diminished"], [1, "Major"], [3, "Minor"], [5, "Minor"], [6, "Major"], [8, "Major"], [10, "Minor"]],
 };
 
-// DEFAULT_DRUM_NOTES de code.py (GM, canal 10)
+// DEFAULT_DRUM_NOTES from code.py (GM, channel 10)
 export const DRUM_NOTES = { I: 36, II: 38, III: 42, IV: 46, V: 41, VI: 49, VII: 51 };
 export const DRUM_NAMES = { I: "Kick", II: "Snare", III: "Hi-Hat", IV: "Open HH", V: "Tom", VI: "Crash", VII: "Ride" };
 
 const MAJOR_TYPES = new Set(["Major", "Major 7", "Dominant 7"]);
 
-// Intervalo, tipo y calidad (mayor/menor) del acorde de un grado
+// Interval, type and quality (major/minor) of a degree's chord
 export function chordInfo(mode, roman) {
   const row = DB[mode];
   if (!row) return null;
@@ -56,10 +56,10 @@ export function chordFromDatabase(mode, roman, base) {
 }
 
 export function chordType(mode, roman) {
-  return mode === "DrumMode" ? "Percusión" : chordInfo(mode, roman).type;
+  return mode === "DrumMode" ? "Percussion" : chordInfo(mode, roman).type;
 }
 
-// Sufijos de get_chord_name() en code.py: lo que pinta la OLED
+// Suffixes from get_chord_name() in code.py: what the OLED shows
 const SUFFIX = { "Major": "", "Minor": "m", "Diminished": "°", "Major 7": "M7", "Minor 7": "m7", "Dominant 7": "7", "Minor 7♭5": "m7b5" };
 
 export function getChordName(baseIdx, modeIdx, roman) {
@@ -71,8 +71,8 @@ export function getChordName(baseIdx, modeIdx, roman) {
 
 export const midiName = (n) => BASE_NOTES[((n % 12) + 12) % 12] + (Math.floor(n / 12) - 1);
 
-// ---------- Ampliadores de acorde (propuesta) ----------
-// Escala de cada modo, para las notas diatónicas (7.ª, 6.ª, 9.ª del grado)
+// ---------- Chord modifiers (proposed) ----------
+// Scale of each mode, for the diatonic notes (the degree's 7th, 6th, 9th)
 const SCALES = {
   Ionian: [0, 2, 4, 5, 7, 9, 11], Dorian: [0, 2, 3, 5, 7, 9, 10], Phrygian: [0, 1, 3, 5, 7, 8, 10],
   Lydian: [0, 2, 4, 6, 7, 9, 11], Mixolydian: [0, 2, 4, 5, 7, 9, 10], Aeolian: [0, 2, 3, 5, 7, 8, 10],
@@ -80,34 +80,34 @@ const SCALES = {
 };
 
 export const MODIFIERS = [
-  { id: "7", label: "7th", desc: "séptima del modo" },
-  { id: "9", label: "add9", desc: "novena del modo" },
-  { id: "6", label: "add6", desc: "sexta del modo" },
-  { id: "sus2", label: "sus2", desc: "segunda en lugar de la tercera" },
-  { id: "sus4", label: "sus4", desc: "cuarta en lugar de la tercera" },
-  { id: "5", label: "5 (red)", desc: "reducido: raíz, quinta y octava, sin tercera" },
-  { id: "swap", label: "maj<>min", desc: "cambia mayor ↔ menor" },
-  { id: "inv1", label: "inv 1", desc: "primera inversión" },
-  { id: "inv2", label: "inv 2", desc: "segunda inversión" },
-  { id: "bass", label: "bass", desc: "raíz una octava abajo" },
+  { id: "7", label: "7th", desc: "seventh from the mode" },
+  { id: "9", label: "add9", desc: "ninth from the mode" },
+  { id: "6", label: "add6", desc: "sixth from the mode" },
+  { id: "sus2", label: "sus2", desc: "second instead of the third" },
+  { id: "sus4", label: "sus4", desc: "fourth instead of the third" },
+  { id: "5", label: "5 (red)", desc: "reduced: root, fifth and octave, no third" },
+  { id: "swap", label: "maj<>min", desc: "swaps major ↔ minor" },
+  { id: "inv1", label: "inv 1", desc: "first inversion" },
+  { id: "inv2", label: "inv 2", desc: "second inversion" },
+  { id: "bass", label: "bass", desc: "root an octave below" },
 ];
 export const modifierById = (id) => MODIFIERS.find((m) => m.id === id);
 
-// Semitonos desde la raíz del grado hasta la nota `k` pasos de escala por encima
+// Semitones from the degree's root to the note `k` scale steps above
 function scaleStep(mode, roman, k) {
   const sc = SCALES[mode];
   const d = ROMANS.indexOf(roman);
   return sc[(d + k) % 7] + 12 * Math.floor((d + k) / 7) - sc[d];
 }
 
-// Calidad del acorde (de tríada) tras aplicar maj<>min
+// (Triad) chord quality after applying maj<>min
 function triadQuality(info, mods) {
   const base = info.type.startsWith("Major") || info.type === "Dominant 7" ? "maj" : info.type.startsWith("Minor 7♭5") || info.type === "Diminished" ? "dim" : "min";
   if (!mods.includes("swap")) return base;
-  return base === "maj" ? "min" : "maj"; // menor y disminuido pasan a mayor
+  return base === "maj" ? "min" : "maj"; // minor and diminished become major
 }
 
-// Notas del acorde con los ampliadores pulsados, en el orden: calidad, añadidos, inversiones
+// Chord notes with the held modifiers, applied in order: quality, added notes, inversions
 export function extendChord(mode, roman, base, mods = []) {
   if (mode === "DrumMode" || !mods.length) return chordFromDatabase(mode, roman, base);
   const info = chordInfo(mode, roman);
@@ -130,7 +130,7 @@ export function extendChord(mode, roman, base, mods = []) {
   return notes;
 }
 
-// Nombre del acorde ampliado, p. ej. "Dm7", "Cadd9", "G5", "F/A"
+// Name of the extended chord, e.g. "Dm7", "Cadd9", "G5", "F/A"
 export function extendedName(baseIdx, modeIdx, roman, mods = []) {
   const mode = MODES[modeIdx];
   if (mode === "DrumMode" || !mods.length) return getChordName(baseIdx, modeIdx, roman);
@@ -147,7 +147,7 @@ export function extendedName(baseIdx, modeIdx, roman, mods = []) {
     else if (q === "maj") suffix = sev === 11 ? "M7" : "7";
     else if (q === "min") suffix = sev === 11 ? "mM7" : "m7";
     else suffix = sev === 9 ? "°7" : "m7b5";
-    // Con séptima, la novena se nombra 9 (CM9, Dm9, G9) en lugar de add9
+    // With a seventh, the ninth is named 9 (CM9, Dm9, G9) instead of add9
     if (mods.includes("9")) suffix = suffix.replace("7", "9");
   } else {
     suffix = sus || (q === "min" ? "m" : q === "dim" ? "°" : "");

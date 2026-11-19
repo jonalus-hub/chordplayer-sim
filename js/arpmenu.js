@@ -1,14 +1,14 @@
-// Menú de ajustes (propuesta). Se abre manteniendo cualquier encoder 1 s.
+// Settings menu (proposed). Opens by holding any encoder for 1 s.
 //
-// Raíz: Arp on/off, Tempo, Pattern, New pattern, Mod 1–3 (qué hace cada ampliador),
-// Note (Gate o Sustain), Screen, Exit.
-//   Base (arriba) = elegir fila · Modo (medio) = cambiar el valor al momento
-//   toque: en Pattern abre el editor del patrón elegido, en New pattern crea uno, en Exit cierra
+// Root: Arp on/off, Tempo, Pattern, New pattern, Mod 1–3 (what each modifier does),
+// Note (Gate or Sustain), Screen, Exit.
+//   Base (top) = pick a row · Mode (middle) = change the value right away
+//   press: on Pattern opens the editor for that pattern, on New pattern creates one, on Exit closes
 // Editor:
-//   Base   = paso seleccionado (y, pasado el último, las acciones Add / Del / Save / Back)
-//   Modo   = nota del acorde de ese paso (1–4, o "-" = silencio)
-//   Octava = duración del paso, en pulsos (1 = una negra al tempo de Ajustes)
-//   toque sobre un paso = cogerlo para moverlo con Base; otro toque lo suelta
+//   Base   = selected step (and, past the last one, the Add / Del / Save / Back actions)
+//   Mode   = chord note for that step (1–4, or "-" = rest)
+//   Octave = step length, in beats (1 = a quarter note at the Settings tempo)
+//   press on a step = pick it up to move it with Base; another press drops it
 import { DURATIONS, DURATION_LABELS, NOTE_VALUES, MAX_STEPS, noteLabel } from "./rhythm.js";
 import { MODIFIERS, modifierById } from "./chords.js";
 
@@ -26,7 +26,7 @@ export class ArpMenu {
     this.flashMsg = null;
   }
 
-  // ---- Raíz: ajustes ----
+  // ---- Root: settings ----
   rootRows() {
     const p = this.p;
     const mods = p.modAssign.map((id, i) => ({
@@ -36,13 +36,13 @@ export class ArpMenu {
     return [
       { label: "Arp", value: p.rhythmMode ? "On" : "Off", step: () => p.toggleRhythm() },
       { label: "Tempo", value: `${p.bpm} BPM`, step: (d) => p.setBpm(p.bpm + d) },
-      // Modo elige el arpegio activo (suena al momento); un toque lo abre en el editor
+      // Mode picks the active arpeggio (heard right away); a press opens it in the editor
       { label: "Pattern", value: p.patterns[p.rhythmIdx].name.slice(0, 8), step: (d) => p.selectPattern(p.rhythmIdx + d), press: () => this.openEditor(p.rhythmIdx) },
       { label: "New pattern", value: "", press: () => this.openEditor(null) },
       ...mods,
-      // Botón Note: Gate = la nota suena mientras se pulsa; Sustain = se acumulan mientras se mantiene el acorde
+      // Note button: Gate = the note sounds while pressed; Sustain = notes build up while the chord is held
       { label: "Note", value: p.noteMode === "sustain" ? "Sustain" : "Gate", step: () => p.setNoteMode(p.noteMode === "sustain" ? "gate" : "sustain") },
-      // Pantalla principal: nombres de acordes en zigzag o teclado con las notas que suenan
+      // Main screen: chord names in a zigzag, or a keyboard with the sounding notes
       { label: "Screen", value: p.screen === "keys" ? "Keys" : "Chords", step: () => p.setScreen(p.screen === "keys" ? "chords" : "keys") },
       { label: "Exit", value: "", press: () => p.closeMenu() },
     ];
@@ -55,7 +55,7 @@ export class ArpMenu {
     this.edit = { presetIdx, name: base.name, steps: clone(base.steps), dirty: presetIdx == null, sel: 0, cursor: 0, moving: false };
     this.level = "edit";
     if (presetIdx != null) p.selectPattern(presetIdx, false);
-    // Para oír los cambios al mantener un acorde
+    // So changes can be heard while holding a chord
     if (!p.rhythmMode) p.setRhythmMode(true);
     p.log(`Editing arpeggio ${base.name}`);
   }
@@ -79,7 +79,7 @@ export class ArpMenu {
     const p = this.p, e = this.edit;
     let pat = e.presetIdx != null ? p.patterns[e.presetIdx] : null;
     if (!pat || pat.builtin) {
-      // Los presets del firmware no se sobrescriben: se guarda uno nuevo
+      // Firmware presets are never overwritten: a new one is saved
       pat = { name: p.nextUserName(), steps: [], builtin: false };
       p.patterns.push(pat);
       e.presetIdx = p.patterns.length - 1;
@@ -98,7 +98,7 @@ export class ArpMenu {
     setTimeout(() => this.p.onChange(), FLASH_MS + 20);
   }
 
-  // ---- Entradas ----
+  // ---- Inputs ----
   turn(enc, d) {
     if (this.level === "root") {
       const rows = this.rootRows();
@@ -146,13 +146,13 @@ export class ArpMenu {
       if (e.steps.length >= MAX_STEPS) { this.flash(`Max ${MAX_STEPS} steps`); return; }
       e.steps.splice(e.sel + 1, 0, [...e.steps[e.sel]]);
       e.sel += 1;
-      e.cursor = e.steps.length; // sigue en "Add" para añadir más
+      e.cursor = e.steps.length; // stays on "Add" to add more
       e.dirty = true;
     } else if (action === "Del") {
       if (e.steps.length <= 1) { this.flash("Min 1 step"); return; }
       e.steps.splice(e.sel, 1);
       e.sel = Math.min(e.sel, e.steps.length - 1);
-      e.cursor = e.steps.length + 1; // sigue en "Del"
+      e.cursor = e.steps.length + 1; // stays on "Del"
       e.dirty = true;
     } else if (action === "Save") {
       this.save();
@@ -161,10 +161,10 @@ export class ArpMenu {
     }
   }
 
-  // Pasos que suenan: los del editor mientras está abierto
+  // Steps that sound: the editor's while it is open
   liveSteps() { return this.edit ? this.edit.steps : null; }
 
-  // ---- Lo que pinta la OLED ----
+  // ---- What the OLED shows ----
   view() {
     const flash = this.flashMsg && this.flashMsg.until > performance.now() ? this.flashMsg.text : null;
     if (this.level === "root") {
