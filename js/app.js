@@ -175,7 +175,7 @@ function renderReco(p) {
   const r = p.reco;
   const src = $("reco-source");
   if (p.isDrum) { src.textContent = "DrumMode"; src.className = "chip"; }
-  else if (r.source === "ai") { src.textContent = `AI · ${r.file} · order ${r.order || "—"}`; src.className = "chip ok"; }
+  else if (r.source === "ai") { src.textContent = `Markov chains · ${r.file} · order ${r.order || "—"}`; src.className = "chip ok"; }
   else if (r.source === "nextchord") { src.textContent = "nextchord.py"; src.className = "chip"; }
   else if (r.source === "error") { src.textContent = "model not available"; src.className = "chip warn"; }
   else if (r.loading) { src.textContent = "loading…"; src.className = "chip"; }
@@ -185,7 +185,7 @@ function renderReco(p) {
 
   $("history").replaceChildren(...(p.history.length
     ? p.history.map((h) => Object.assign(document.createElement("span"), { className: "hchip", textContent: `${h.name} · ${h.token}` }))
-    : [Object.assign(document.createElement("span"), { className: "muted", textContent: "empty: the AI suggests how to start" })]));
+    : [Object.assign(document.createElement("span"), { className: "muted", textContent: "empty: the Markov chains suggest how to start" })]));
 
   const list = $("predictions");
   const items = p.isDrum ? [] : r.items;

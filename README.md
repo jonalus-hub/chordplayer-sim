@@ -2,7 +2,7 @@
 
 Web simulator of the ChordPlayer (Swyng Daccorder), a MIDI chord controller built on a Raspberry Pi Pico:
 seven keys in a zigzag for the seven chords of the scale, encoders for root, mode and octave,
-chord modifiers, editable arpeggios and AI chord recommendations.
+chord modifiers, editable arpeggios and chord recommendations from Markov chains.
 
 **Open it in your browser: https://jonalus-hub.github.io/chordplayer-sim/**
 
@@ -48,7 +48,7 @@ python3 -m http.server 8000   # then open http://localhost:8000
 | USB-MIDI output | Web Audio synthesizer (`js/audio.js`) + optional Web MIDI (`js/midi.js`) |
 | Case, keys, encoders | `js/device.js` (geometry in millimetres) |
 
-## AI recommendations (proposed)
+## Markov chain recommendations (proposed)
 
 The models are order-1 to order-3 Markov chains trained on Chordonomicon, one per mode and genre.
 Each `.bin` is 146,224 bytes and is laid out for the Pico to read with `seek()`. Here they are
@@ -121,7 +121,7 @@ they do not change the chord that is already sounding. Each one does whatever Se
 | add6 | Sixth from the mode |
 | sus2 / sus4 | Second or fourth instead of the third |
 | 5 (red) | Reduced: root, fifth and octave, no third |
-| maj<>min | Swaps major ↔ minor (minor and diminished become major); the AI sees it as the chord that sounds |
+| maj<>min | Swaps major ↔ minor (minor and diminished become major); the Markov chains see it as the chord that sounds |
 | inv 1 / inv 2 | First or second inversion |
 | bass | Adds the root an octave below |
 

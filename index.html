@@ -16,7 +16,7 @@
       <h1>Chord<span>Player</span></h1>
       <div class="fw">future device · firmware fw-2026-04-07 · Main_ZB case (May 2026) · Raspberry Pi Pico</div>
     </div>
-    <p>Seven keys in a zigzag play the seven chords of the scale. The encoders pick the root, mode and octave, and the AI suggests which chord comes next.</p>
+    <p>Seven keys in a zigzag play the seven chords of the scale. The encoders pick the root, mode and octave, and Markov chains suggest which chord comes next.</p>
   </header>
 
   <section class="stage" aria-label="Device">
@@ -152,7 +152,7 @@
         <ul class="origin">
           <li><b>From the firmware:</b> root, mode and octave encoders; polyphonic keys; in DrumMode, turning Octave while holding a pad changes its note.</li>
           <li><b>From the CAD:</b> <code>Main_ZB</code> case, <code>Key_V1_Long</code> keys in a zigzag every 20 mm, 2.42" OLED, 3 encoders in a column and 3 buttons under the screen.</li>
-          <li><b>Proposed:</b> <code>Chord_AI</code> on the device, genre on the Mode encoder's push switch, LEDs under the keys and bars on the OLED.</li>
+          <li><b>Proposed:</b> the <code>Chord_AI</code> Markov chains on the device, genre on the Mode encoder's push switch, LEDs under the keys and bars on the OLED.</li>
           <li><b>Proposed:</b> no 7 "7th" modes from the firmware: the seventh is played with the 7th modifier.</li>
           <li><b>Proposed:</b> a <i>Note</i> button next to the modifiers (no hole in the CAD yet): a hand-played arpeggio, one note per press.</li>
           <li><b>Proposed:</b> the 3 buttons under the screen are chord modifiers. They are held before playing the key, and each one does whatever Settings says (seventh, ninth, reduced…).</li>

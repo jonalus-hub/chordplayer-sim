@@ -1,5 +1,5 @@
 // State machine of code.py (fw-2026-04-07), turned from polling into events,
-// plus the proposed features of the future device (AI, genre, LEDs, settings menu,
+// plus the proposed features of the future device (Markov chain recommendations, genre, LEDs, settings menu,
 // editable arpeggios, chord modifiers and the Note button).
 import { BASE_NOTES, MODES, ROMANS, chordInfo, applyOctave, DRUM_NOTES, extendChord, extendedName, modifierById } from "./chords.js";
 import { getNextChords, chordToFunction } from "./nextchord.js";
@@ -504,7 +504,7 @@ export class ChordPlayer {
       this.reco = { source: "ai", file, order: p.order, context: p.context, items };
       if (logIt) {
         const txt = items.map((i) => `${i.token} ${i.pct}%${i.roman ? "" : " (not in mode)"}`).join(", ");
-        this.log(`AI [${file}, order ${p.order}]: ${txt || "no data"}`);
+        this.log(`Markov chains [${file}, order ${p.order}]: ${txt || "no data"}`);
       }
     } catch (err) {
       if (seq !== this.recoSeq) return;
