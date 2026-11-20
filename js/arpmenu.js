@@ -1,6 +1,6 @@
 // Settings menu (proposed). Opens by holding any encoder for 1 s.
 //
-// Root: Arp on/off, Tempo, Pattern, New pattern, Quantize, Mod 1–3 (what each modifier does),
+// Root: Arp on/off, Tempo, Pattern, New pattern, Quantize, Latch, Mod 1–3 (what each modifier does),
 // Note (Gate or Sustain), Note order (Up, Down, Random), Screen, Exit.
 //   Base (top) = pick a row · Mode (middle) = change the value right away
 //   press: on Pattern opens the editor for that pattern, on New pattern creates one, on Exit closes
@@ -41,8 +41,13 @@ export class ArpMenu {
       // Mode picks the active arpeggio (heard right away); a press opens it in the editor
       { label: "Pattern", value: p.patterns[p.rhythmIdx].name.slice(0, 8), step: (d) => p.selectPattern(p.rhythmIdx + d), press: () => this.openEditor(p.rhythmIdx) },
       { label: "New pattern", value: "", press: () => this.openEditor(null) },
-      // Quantize: a new chord waits for the running pattern to finish
-      { label: "Quantize", value: QUANTIZE[p.quantize], step: () => p.setQuantize(p.quantized ? "off" : "pattern") },
+      // Quantize: what a new chord does to the running arpeggio (Off, Continue, Beat, Pattern)
+      { label: "Quantize", value: QUANTIZE[p.quantize], step: (d) => {
+        const keys = Object.keys(QUANTIZE);
+        p.setQuantize(keys[wrap(keys.indexOf(p.quantize) + d, keys.length)]);
+      } },
+      // Latch: the arpeggio keeps playing after the keys are released
+      { label: "Latch", value: p.latch ? "On" : "Off", step: () => p.setLatch(!p.latch) },
       ...mods,
       // Note button: Gate = the note sounds while pressed; Sustain = notes build up while the chord is held
       { label: "Note", value: p.noteMode === "sustain" ? "Sustain" : "Gate", step: () => p.setNoteMode(p.noteMode === "sustain" ? "gate" : "sustain") },

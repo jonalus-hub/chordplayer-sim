@@ -1,4 +1,4 @@
-import { MODES, ROMANS, BASE_NOTES, getChordName, chordType, midiName, DRUM_NAMES, MODIFIERS, modifierById } from "./chords.js";
+import { MODES, ROMANS, BASE_NOTES, getChordName, chordType, midiName, DRUM_NAMES, MODIFIERS, modifierById, extendedName } from "./chords.js";
 import { scaleSteps, noteLabel, DURATION_LABELS } from "./rhythm.js";
 import { GENRES, borrowedModel } from "./ai.js";
 import { Oled } from "./display.js";
@@ -110,6 +110,7 @@ $("pattern").addEventListener("change", (e) => player.selectPattern(+e.target.va
 $("pattern-delete").addEventListener("click", () => player.deletePattern(player.rhythmIdx));
 $("bpm").addEventListener("input", (e) => player.setBpm(+e.target.value));
 $("quantize").addEventListener("change", (e) => player.setQuantize(e.target.value));
+$("latch").addEventListener("change", (e) => player.setLatch(e.target.checked));
 for (let i = 0; i < 3; i++) {
   const sel = $(`mod-${i}`);
   MODIFIERS.forEach((m) => sel.append(new Option(`${m.label} · ${m.desc}`, m.id)));
@@ -273,8 +274,15 @@ function render() {
   } else if (chords.length) {
     $("now-chord").textContent = chords.map((r) => p.chordName(r)).join(" + ");
     const cur = chords.includes(p.current) ? p.current : chords.at(-1);
-    const queued = p.rhythmMode && p.quantized && p.rhythm?.next ? ` · next: ${p.chordName(p.rhythm.next)}` : "";
+    const queued = p.rhythmMode && p.rhythm?.next ? ` · next: ${p.chordName(p.rhythm.next)}` : "";
     $("now-meta").textContent = `Degree ${chords.join(" + ")} of ${BASE_NOTES[p.baseIdx]} ${p.mode} · ${chordType(p.mode, cur)}${p.rhythmMode ? ` · arpeggiated (${p.patterns[p.rhythmIdx].name})` : ""}${queued}`;
+    const notes = [...p.activeNotes()].sort((a, b) => a - b);
+    $("now-notes").textContent = notes.length ? notes.map((n) => `${midiName(n)} (${n})`).join("  ") : " ";
+  } else if (p.rhythm && p.rhythmMode) {
+    // Arpeggio still running with no key held (Latch, or Pattern finishing its cycle)
+    const r = p.rhythm;
+    $("now-chord").textContent = extendedName(p.baseIdx, p.modeIdx, r.chord, r.mods);
+    $("now-meta").textContent = `${r.ending ? "finishing the pattern" : "latched"} · arpeggiated (${p.patterns[p.rhythmIdx].name})${r.next ? ` · next: ${extendedName(p.baseIdx, p.modeIdx, r.next, r.nextMods)}` : ""}`;
     const notes = [...p.activeNotes()].sort((a, b) => a - b);
     $("now-notes").textContent = notes.length ? notes.map((n) => `${midiName(n)} (${n})`).join("  ") : " ";
   } else {
@@ -314,10 +322,13 @@ function render() {
   $("bpm-val").textContent = `${p.bpm} BPM`;
   $("rhythm-on").checked = p.rhythmMode;
   $("quantize").value = p.quantize;
+  $("latch").checked = p.latch;
   const r = p.rhythm;
-  $("arp-queue").textContent = !r || !p.quantized ? "" : r.next
-    ? `Next: ${p.chordName(r.next)} when the pattern ends`
-    : r.ending ? "Finishing the pattern, then stopping" : "";
+  const when = p.quantize === "beat" ? "on the next beat" : "when the pattern ends";
+  $("arp-queue").textContent = !r ? "" : r.next
+    ? `Next: ${extendedName(p.baseIdx, p.modeIdx, r.next, r.nextMods)} ${when}`
+    : r.ending ? "Finishing the pattern, then stopping"
+    : p.latch && !p.fullChords().length ? `Latched: ${extendedName(p.baseIdx, p.modeIdx, r.chord, r.mods)}` : "";
 
   const a = $("audio-state");
   const running = synth.ctx && synth.ctx.state === "running";

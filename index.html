@@ -111,8 +111,11 @@
           <label for="quantize">Quantize</label>
           <select id="quantize">
             <option value="off">Off · a new chord restarts the pattern at once</option>
+            <option value="continue">Continue · same place in the pattern, new notes at once</option>
+            <option value="beat">Beat · the new chord starts the pattern on the next beat</option>
             <option value="pattern">Pattern · the running pattern finishes first</option>
           </select>
+          <label class="switch"><input type="checkbox" id="latch"> Latch</label>
           <span class="value" id="arp-queue" aria-live="polite"></span>
         </div>
         <div class="row">
@@ -172,7 +175,7 @@
           <li><b>Proposed:</b> 6 more scales after the 7 modes: harmonic minor, melodic minor, Phrygian dominant, major and minor pentatonic, and blues.</li>
           <li><b>Proposed:</b> a <i>Note</i> button next to the modifiers (no hole in the CAD yet): a hand-played arpeggio, one note per press.</li>
           <li><b>Proposed:</b> the 3 buttons under the screen are chord modifiers. They are held before playing the key, and each one does whatever Settings says (seventh, ninth, reduced…).</li>
-          <li><b>Proposed:</b> settings by holding any encoder for 1 s: Arp, Tempo, Pattern, New pattern, Quantize, Mod 1–3, Note, Note order, Screen (chords or keyboard on the main screen). The Base encoder moves through the rows and Mode changes the value; a press only opens the editor, creates a pattern or exits. In the editor, Base picks the step, Mode changes its note (1–4 or rest) and Octave its length; a press on a step picks it up to move it; Mod 1, Mod 2, Mod 3 and Note are Add, Del, Save and Back. <i>Save</i> stores a preset (firmware presets are saved as a <i>User N</i> copy). Holding for 1 s again closes the menu without saving.</li>
+          <li><b>Proposed:</b> settings by holding any encoder for 1 s: Arp, Tempo, Pattern, New pattern, Quantize, Latch, Mod 1–3, Note, Note order, Screen (chords or keyboard on the main screen). The Base encoder moves through the rows and Mode changes the value; a press only opens the editor, creates a pattern or exits. In the editor, Base picks the step, Mode changes its note (1–4 or rest) and Octave its length; a press on a step picks it up to move it; Mod 1, Mod 2, Mod 3 and Note are Add, Del, Save and Back. <i>Save</i> stores a preset (firmware presets are saved as a <i>User N</i> copy). Holding for 1 s again closes the menu without saving.</li>
         </ul>
       </div>
     </aside>

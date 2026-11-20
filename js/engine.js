@@ -30,9 +30,10 @@ function loadSettings() {
       noteMode: v.noteMode in NOTE_MODES ? v.noteMode : "gate",
       noteOrder: v.noteOrder in NOTE_ORDERS ? v.noteOrder : "up",
       quantize: v.quantize in QUANTIZE ? v.quantize : "off",
+      latch: v.latch === true,
     };
   } catch {
-    return { screen: "chords", noteMode: "gate", noteOrder: "up", quantize: "off" };
+    return { screen: "chords", noteMode: "gate", noteOrder: "up", quantize: "off", latch: false };
   }
 }
 
@@ -87,7 +88,8 @@ export class ChordPlayer {
     this.screen = settings.screen;        // "chords" (names in a zigzag) or "keys" (keyboard)
     this.noteMode = settings.noteMode;    // "gate" or "sustain" (Note button)
     this.noteOrder = settings.noteOrder;  // "up", "down" or "random" (Note button)
-    this.quantize = settings.quantize;    // "off" or "pattern" (arpeggio)
+    this.quantize = settings.quantize;    // "off", "continue", "beat" or "pattern" (arpeggio)
+    this.latch = settings.latch;          // arpeggio keeps playing after the keys are released
     this.menu = null;            // ArpMenu while it is open
   }
 
@@ -206,7 +208,7 @@ export class ChordPlayer {
   }
 
   saveSettings() {
-    try { localStorage.setItem(SETTINGS_KEY, JSON.stringify({ screen: this.screen, noteMode: this.noteMode, noteOrder: this.noteOrder, quantize: this.quantize })); } catch { /* this session only */ }
+    try { localStorage.setItem(SETTINGS_KEY, JSON.stringify({ screen: this.screen, noteMode: this.noteMode, noteOrder: this.noteOrder, quantize: this.quantize, latch: this.latch })); } catch { /* this session only */ }
   }
 
   setScreen(screen) {
@@ -223,7 +225,17 @@ export class ChordPlayer {
     this.onChange();
   }
 
-  get quantized() { return this.quantize === "pattern"; }
+  setLatch(on) {
+    this.latch = !!on;
+    this.saveSettings();
+    this.log(`Arpeggio latch ${this.latch ? "on" : "off"}`);
+    // Turning latch off with no key held ends the arpeggio (Pattern: at the end of the cycle)
+    const r = this.rhythm;
+    if (!this.latch && r && !this.fullChords().length) {
+      if (this.quantize === "pattern") { r.next = null; r.ending = true; } else this.stopRhythm();
+    }
+    this.onChange();
+  }
 
   setNoteOrder(order) {
     this.noteOrder = order in NOTE_ORDERS ? order : "up";
@@ -318,7 +330,7 @@ export class ChordPlayer {
     }
     const chords = this.fullChords();
     // Quantized: the pattern keeps its place in the cycle and picks up the new notes
-    if (this.rhythm && this.quantized && this.rhythmMode && !this.isDrum) return;
+    if (this.rhythm && this.quantize !== "off" && this.rhythmMode && !this.isDrum) return;
     const was = this.rhythm?.chord;
     this.stopRhythm();
     if (this.isDrum || !chords.length) return;
@@ -371,14 +383,22 @@ export class ChordPlayer {
       if (this.rhythmMode) {
         const chords = this.fullChords();
         const r = this.rhythm;
-        if (r && this.quantized) {
-          // Quantized: nothing is cut. A queued chord that is released is dropped; with every key
-          // released the pattern plays to its end and then stops (unless a chord comes in time)
+        if (!r) {
+          // nothing running
+        } else if (this.latch) {
+          // Latch: releasing keys never stops or changes the arpeggio (a queued chord still comes in)
+        } else if (this.quantize === "pattern") {
+          // Nothing is cut. A queued chord that is released is dropped; with every key released
+          // the pattern plays to its end and then stops (unless a chord comes in time)
           if (r.next === roman) r.next = null;
           if (!chords.length) { r.next = null; r.ending = true; }
           else if (r.chord === roman && !r.next) this.startRhythm(chords.at(-1));
-        } else if (!chords.length) this.stopRhythm();
-        else if (r && r.chord === roman) this.startRhythm(chords.at(-1));
+        } else if (!chords.length) {
+          this.stopRhythm();
+        } else {
+          if (r.next === roman) { r.next = null; this.cancelBeatSwitch(r); }
+          if (r.chord === roman && !r.next) this.startRhythm(chords.at(-1));
+        }
       } else {
         this.stopChord(roman);
       }
@@ -603,7 +623,7 @@ export class ChordPlayer {
     this.rhythmIdx = wrap(i, this.patterns.length);
     this.log(`Rhythm pattern: ${this.patterns[this.rhythmIdx].name}`);
     // Quantized, the new pattern starts on the next cycle (tick() picks it up)
-    if (restart && this.rhythm && !this.quantized) { const c = this.rhythm.chord; this.stopRhythm(); this.startRhythm(c); }
+    if (restart && this.rhythm && this.quantize === "off") { const c = this.rhythm.chord; this.stopRhythm(); this.startRhythm(c); }
     this.onChange();
   }
 
@@ -611,33 +631,76 @@ export class ChordPlayer {
   get timeStep() { return 60 / this.bpm; }
 
   setBpm(bpm) {
+    const r = this.rhythm;
+    if (r) r.anchorBeat = this.beatPos(r);  // keep the beat grid across tempo changes
+    if (r) r.anchorT = performance.now();
     this.bpm = Math.round(Math.max(MIN_BPM, Math.min(MAX_BPM, bpm)));
+    if (r && r.beatTimer) { this.cancelBeatSwitch(r); this.scheduleBeatSwitch(r); }
     this.onChange();
+  }
+
+  // ---- Beat grid (Quantize = Beat) ----
+  beatPos(r) { return r.anchorBeat + (performance.now() - r.anchorT) / (60000 / this.bpm); }
+
+  scheduleBeatSwitch(r) {
+    const beatMs = 60000 / this.bpm;
+    const frac = this.beatPos(r) % 1;
+    const wait = frac < 0.01 || frac > 0.99 ? 0 : (1 - frac) * beatMs;
+    r.beatTimer = setTimeout(() => this.beatSwitch(r), wait);
+  }
+
+  cancelBeatSwitch(r) {
+    if (r && r.beatTimer) { clearTimeout(r.beatTimer); r.beatTimer = null; }
+  }
+
+  // On the beat: the queued chord takes over and the pattern starts again from its first step
+  beatSwitch(r) {
+    r.beatTimer = null;
+    if (this.rhythm !== r || !r.next) return;
+    clearTimeout(r.timer);
+    clearTimeout(r.gate);
+    if (r.note != null) { this.sendNoteOff(r.note, r.owner); r.note = null; }
+    r.chord = r.next; r.mods = r.nextMods; r.next = null; r.nextMods = null;
+    r.step = 0; r.steps = null;
+    r.anchorBeat = Math.round(this.beatPos(r)); r.anchorT = performance.now();
+    r.tick();
   }
 
   startRhythm(chord) {
     const old = this.rhythm;
     const mods = this.held.get(chord)?.mods ?? [];
-    if (old && old.chord === chord) { old.next = null; old.ending = false; return; }
-    // Quantized: queue the chord; it starts when the running pattern ends
-    if (old && this.quantized) {
-      old.next = chord;
-      old.nextMods = mods;
-      old.ending = false;
+    if (old && old.chord === chord) {
+      old.next = null; old.ending = false; this.cancelBeatSwitch(old);
+      return;
+    }
+    if (old && this.quantize === "continue") {
+      // Same place in the pattern, new notes from the next step on
+      old.chord = chord; old.mods = mods; old.next = null; old.ending = false;
+      this.onChange();
+      return;
+    }
+    if (old && (this.quantize === "pattern" || this.quantize === "beat")) {
+      // Queue the chord: it starts on the next beat, or when the running pattern ends
+      old.next = chord; old.nextMods = mods; old.ending = false;
+      if (this.quantize === "beat" && !old.beatTimer) this.scheduleBeatSwitch(old);
       this.onChange();
       return;
     }
     this.stopRhythm();
-    const r = { chord, mods, step: 0, steps: null, note: null, owner: null, timer: null, gate: null, stepIdx: -1, next: null, nextMods: null, ending: false };
+    const r = {
+      chord, mods, step: 0, steps: null, note: null, owner: null, timer: null, gate: null, stepIdx: -1,
+      next: null, nextMods: null, ending: false, beatTimer: null, anchorBeat: 0, anchorT: performance.now(),
+    };
     this.rhythm = r;
     const tick = () => {
       if (this.rhythm !== r) return;
-      // Not quantized: steps are read live. Quantized: they are fixed for the whole cycle
-      if (!r.steps || !this.quantized) r.steps = this.activeSteps();
+      const fixed = this.quantize === "pattern";
+      // Pattern quantize fixes the steps for the whole cycle; the other modes read them live
+      if (!r.steps || !fixed) r.steps = this.activeSteps();
       if (r.step >= r.steps.length) {
         // A full pattern has played
         r.step = 0;
-        if (this.quantized) {
+        if (fixed) {
           if (r.next) {
             r.chord = r.next; r.mods = r.nextMods; r.next = null; r.nextMods = null;
             this.current = this.held.has(r.chord) ? r.chord : this.current;
@@ -669,6 +732,7 @@ export class ChordPlayer {
       }
       r.timer = setTimeout(tick, Math.max(10, delay * 1000));
     };
+    r.tick = tick;
     tick();
   }
 
@@ -677,6 +741,7 @@ export class ChordPlayer {
     if (!r) return;
     clearTimeout(r.timer);
     clearTimeout(r.gate);
+    this.cancelBeatSwitch(r);
     if (r.note != null) this.sendNoteOff(r.note, r.owner);
     this.rhythm = null;
   }
