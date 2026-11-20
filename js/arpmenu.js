@@ -5,10 +5,12 @@
 //   Base (top) = pick a row · Mode (middle) = change the value right away
 //   press: on Pattern opens the editor for that pattern, on New pattern creates one, on Exit closes
 // Editor:
-//   Base   = selected step (and, past the last one, the Add / Del / Save / Back actions)
+//   Base   = selected step
 //   Mode   = chord note for that step (1–4, or "-" = rest)
 //   Octave = step length, in beats (1 = a quarter note at the Settings tempo)
 //   press on a step = pick it up to move it with Base; another press drops it
+//   the 4 buttons under the screen are soft keys: Mod 1 = Add, Mod 2 = Del, Mod 3 = Save, Note = Back
+//   (the bottom row of the OLED labels them in the same order)
 import { DURATIONS, DURATION_LABELS, NOTE_VALUES, MAX_STEPS, NOTE_ORDERS, QUANTIZE, noteLabel } from "./rhythm.js";
 import { MODIFIERS, modifierById } from "./chords.js";
 
@@ -59,7 +61,7 @@ export class ArpMenu {
   openEditor(presetIdx) {
     const p = this.p;
     const base = presetIdx == null ? { name: "new", steps: [[0, 1], [1, 1], [2, 1]] } : p.patterns[presetIdx];
-    this.edit = { presetIdx, name: base.name, steps: clone(base.steps), dirty: presetIdx == null, sel: 0, cursor: 0, moving: false };
+    this.edit = { presetIdx, name: base.name, steps: clone(base.steps), dirty: presetIdx == null, sel: 0, moving: false, pressed: null };
     this.level = "edit";
     if (presetIdx != null) p.selectPattern(presetIdx, false);
     // So changes can be heard while holding a chord
@@ -74,8 +76,6 @@ export class ArpMenu {
     this.rootIndex = this.rootRows().findIndex((r) => r.label === "Pattern");
     this.edit = null;
   }
-
-  onAction() { return this.edit.cursor >= this.edit.steps.length ? ACTIONS[this.edit.cursor - this.edit.steps.length] : null; }
 
   setStep(i, field, value) {
     this.edit.steps[i][field] = value;
@@ -123,12 +123,11 @@ export class ArpMenu {
         const to = Math.max(0, Math.min(n - 1, e.sel + d));
         if (to !== e.sel) {
           [e.steps[e.sel], e.steps[to]] = [e.steps[to], e.steps[e.sel]];
-          e.sel = e.cursor = to;
+          e.sel = to;
           e.dirty = true;
         }
       } else {
-        e.cursor = wrap(e.cursor + d, n + ACTIONS.length);
-        if (e.cursor < n) e.sel = e.cursor;
+        e.sel = wrap(e.sel + d, n);
       }
     } else if (enc === "mode") {
       const cur = NOTE_VALUES.indexOf(e.steps[e.sel][0]);
@@ -146,20 +145,26 @@ export class ArpMenu {
       this.rootRows()[this.rootIndex].press?.();
       return;
     }
+    // Encoder press on a step: pick it up / drop it
+    this.edit.moving = !this.edit.moving;
+  }
+
+  // Soft keys in the editor: i = 0..2 for Mod 1–3, 3 for Note
+  softKey(i, down) {
     const e = this.edit;
-    const action = this.onAction();
-    if (!action) { e.moving = !e.moving; return; }
+    if (!down) { if (e && e.pressed === ACTIONS[i]) e.pressed = null; return; }
+    const action = ACTIONS[i];
+    e.pressed = action;
     if (action === "Add") {
       if (e.steps.length >= MAX_STEPS) { this.flash(`Max ${MAX_STEPS} steps`); return; }
       e.steps.splice(e.sel + 1, 0, [...e.steps[e.sel]]);
       e.sel += 1;
-      e.cursor = e.steps.length; // stays on "Add" to add more
       e.dirty = true;
     } else if (action === "Del") {
       if (e.steps.length <= 1) { this.flash("Min 1 step"); return; }
       e.steps.splice(e.sel, 1);
       e.sel = Math.min(e.sel, e.steps.length - 1);
-      e.cursor = e.steps.length + 1; // stays on "Del"
+      e.moving = false;
       e.dirty = true;
     } else if (action === "Save") {
       this.save();
@@ -185,7 +190,7 @@ export class ArpMenu {
       title: `${e.moving ? "MOVE" : "EDIT"} ${e.name}${e.dirty ? "*" : ""}`,
       steps: e.steps.map(([note, dur]) => ({ note: noteLabel(note), dur })),
       sel: e.sel,
-      action: this.onAction(),
+      action: e.pressed,
       actions: ACTIONS,
       detail: `Note ${noteLabel(st[0])}  Dur ${DURATION_LABELS[st[1]] ?? st[1]}`,
       playing: this.p.rhythm?.stepIdx ?? -1,

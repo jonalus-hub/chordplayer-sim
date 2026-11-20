@@ -121,7 +121,11 @@ export class ChordPlayer {
     return [...new Set(this.modAssign.filter((_, i) => this.modHeld[i]))];
   }
 
+  // In the arpeggio editor, Mod 1–3 and Note are its Add / Del / Save / Back soft keys
+  softKeys() { return this.menu?.level === "edit"; }
+
   pressMod(i) {
+    if (this.softKeys()) { this.menu.softKey(i, true); this.touchMenu(); this.onChange(); return; }
     if (this.modHeld[i]) return;
     this.modHeld[i] = true;
     this.log(`Modifier ${i + 1} (${modifierById(this.modAssign[i]).label}) held`);
@@ -130,6 +134,7 @@ export class ChordPlayer {
 
   // ---- Note button (proposed) ----
   pressNote() {
+    if (this.softKeys()) { this.menu.softKey(3, true); this.touchMenu(); this.onChange(); return; }
     if (this.noteHeld) return;
     this.noteHeld = true;
     const a = this.noteArp;
@@ -154,7 +159,8 @@ export class ChordPlayer {
   }
 
   releaseNote() {
-    if (!this.noteHeld) return;
+    if (this.menu?.edit) this.menu.softKey(3, false);
+    if (!this.noteHeld) { this.onChange(); return; }
     this.noteHeld = false;
     // Gate: the note stops when Note is released. Sustain: it lasts while the chord key is held
     if (this.noteMode === "gate") this.noteArpStop();
@@ -193,7 +199,8 @@ export class ChordPlayer {
   }
 
   releaseMod(i) {
-    if (!this.modHeld[i]) return;
+    if (this.menu?.edit) this.menu.softKey(i, false);
+    if (!this.modHeld[i]) { this.onChange(); return; }
     this.modHeld[i] = false;
     this.onChange();
   }

@@ -135,10 +135,13 @@ and the length is in beats at the Settings tempo (1/4, 1/2, 3/4, 1, 1.5, 2, 3, 4
 Opening the editor (a press on Pattern or New pattern) turns arpeggio mode on, so every change can be heard
 while holding a chord. In the editor:
 
-- **Base**: selected step. Past the last one come the actions **Add**, **Del**, **Save**, **Back**.
+- **Base**: selected step.
 - **Mode**: the step's note (this is where the note order is edited).
 - **Octave**: the step's length.
 - **Press on a step**: picks it up to move it with Base; another press drops it.
+- **The 4 buttons under the screen** are soft keys, labelled in the same order on the bottom row of the OLED:
+  **Mod 1 = Add** (copy of the selected step after it), **Mod 2 = Del**, **Mod 3 = Save**, **Note = Back**.
+  While the editor is open they do not act as modifiers or as Note.
 - **Save**: the 4 firmware presets are never overwritten; saving one creates `User N`. `User N` presets are overwritten.
 - **Back**, or closing the menu without saving, discards the changes (the title has a `*` while there are changes).
 
