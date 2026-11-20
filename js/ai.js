@@ -12,8 +12,16 @@ export const VOCAB = [
 
 export const GENRES = ["all", "pop", "rock", "pop_rock", "alternative", "country", "electronic", "jazz", "metal", "punk", "rap", "reggae", "soul"];
 
-// Device modes that have a model (Lydian and Locrian are not in the dataset)
-const MODEL_MODES = new Set(["Ionian", "Dorian", "Phrygian", "Mixolydian", "Aeolian"]);
+// Model each device mode uses. Lydian and Locrian are not in the dataset (they fall back to
+// nextchord.py). The scales the dataset has no data for borrow the closest model.
+const MODEL_FOR = {
+  "Ionian": "Ionian", "Dorian": "Dorian", "Phrygian": "Phrygian", "Mixolydian": "Mixolydian", "Aeolian": "Aeolian",
+  "Phrygian dom": "Phrygian_dominant",
+  "Harmonic minor": "Aeolian", "Melodic minor": "Dorian",
+  "Maj pentatonic": "Ionian", "Min pentatonic": "Aeolian", "Blues": "Mixolydian",
+};
+const BORROWED = new Set(["Harmonic minor", "Melodic minor", "Maj pentatonic", "Min pentatonic", "Blues"]);
+export const borrowedModel = (mode) => (BORROWED.has(mode) ? MODEL_FOR[mode] : null);
 
 const N = VOCAB.length;
 const BLOCK = 8;
@@ -22,7 +30,7 @@ const O3 = O2 + N * N * BLOCK;
 const DEGREES = ["I", "IIb", "II", "IIIb", "III", "IV", "Vb", "V", "VIb", "VI", "VIIb", "VII"];
 
 export function modelFile(mode, genre) {
-  return MODEL_MODES.has(mode) ? `${mode}_${genre}.bin` : null;
+  return MODEL_FOR[mode] ? `${MODEL_FOR[mode]}_${genre}.bin` : null;
 }
 
 const cache = new Map();

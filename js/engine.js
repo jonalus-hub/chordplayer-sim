@@ -505,7 +505,7 @@ export class ChordPlayer {
     if (!t) return { token, pct, roman: null, name: token };
     const roman = ROMANS.find((r) => {
       const i = chordInfo(this.mode, r);
-      return i.interval === t.interval && i.quality === t.quality;
+      return i.interval % 12 === t.interval && i.quality === t.quality;
     }) ?? null;
     const name = BASE_NOTES[(this.baseIdx + t.interval) % 12] + (t.quality === "min" ? "m" : "");
     return { token, pct, roman, name };

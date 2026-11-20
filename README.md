@@ -38,7 +38,7 @@ python3 -m http.server 8000   # then open http://localhost:8000
 
 | Firmware / project | Web |
 |---|---|
-| `chords.py`: 7 triad modes and DrumMode (the 7 "7th" modes were removed) | `js/chords.js` |
+| `chords.py`: 7 triad modes and DrumMode (the 7 "7th" modes were removed), plus 6 proposed scales | `js/chords.js` |
 | `code.py`: encoders, polyphonic keys, per-pad notes in DrumMode, `update_display_text()` | `js/engine.js`, `js/display.js` |
 | `terminalio.FONT` | `js/font.js` (Terminus 6×12) |
 | `nextchord.py` | `js/nextchord.js` (only for Lydian and Locrian) |
@@ -58,11 +58,32 @@ gzip-compressed and the browser decompresses them; the bytes are identical.
   If order 3 has no data it falls back to order 2 and then 1, like `test_bin_models.py`.
 - Each prediction is mapped to the key that plays that chord in the current mode. If the chord is not
   in the mode (for example a major `IV` in Aeolian), it is listed but no key lights up.
-- Modes with a model: Ionian, Dorian, Phrygian, Mixolydian and Aeolian.
-  Lydian and Locrian are not in the dataset and use `nextchord.py`.
+- Modes with their own model: Ionian, Dorian, Phrygian, Mixolydian, Aeolian and Phrygian dominant.
+  Lydian and Locrian are not in the dataset and use `nextchord.py`. The other added scales borrow the
+  closest model: harmonic minor and minor pentatonic use Aeolian, melodic minor uses Dorian, major
+  pentatonic uses Ionian and blues uses Mixolydian (the page says so when it happens).
 - Genres: all, pop, rock, pop rock, alternative, country, electronic, jazz, metal, punk, rap, reggae, soul.
   On the device it changes with a press of the Mode encoder; the OLED shows it for 1.5 s in place of the mode.
 - They show up as LEDs under the keys and as bars under the names on the OLED (both can be turned off).
+
+## More scales (proposed)
+
+Besides the 7 modes, the Mode encoder goes through 6 more scales (the ones the HiChord has that were
+missing, plus Phrygian dominant). Their short names fit the OLED header.
+
+| Scale | Keys I–VII (in C) |
+|---|---|
+| Harmonic minor | Cm, D°, D#+, Fm, G, G#, B° |
+| Melodic minor | Cm, Dm, D#+, F, G, A°, B° |
+| Phrygian dom | C, C#, E°, Fm, G°, G#+, A#m |
+| Maj pentatonic | C, Dm, Em, G, Am, then C and Dm an octave up |
+| Min pentatonic | Cm, D#, Fm, Gm, A#, then Cm and D# an octave up |
+| Blues | C7, D#, F7, F#°, G7, A#, then C7 an octave up |
+
+The 7-note scales stack thirds within the scale, so augmented chords appear (`+`). The pentatonics play a
+chord on each of their 5 notes, with its quality from the parent scale (major or natural minor), and the last
+two keys repeat the first two an octave up. Blues uses dominant sevenths on I, IV and V. The modifiers work on
+all of them: the 7th, 6th and 9th come from the scale, or from the parent scale for the pentatonics and blues.
 
 ## Settings (proposed)
 
@@ -154,8 +175,8 @@ A fourth button, to the right of the modifiers (the May 2026 CAD has no hole for
 
 ## Differences from firmware `fw-2026-04-07`
 
-- No 7 "7th" modes (Ionian 7th…Locrian 7th): the Mode encoder goes through the 7 modes and DrumMode, and the
-  seventh is added with the 7th modifier.
+- No 7 "7th" modes (Ionian 7th…Locrian 7th): the seventh is added with the 7th modifier.
+- 6 extra scales after Locrian: harmonic minor, melodic minor, Phrygian dominant, major and minor pentatonic, and blues.
 - The recommendations, genre, LEDs and OLED bars are proposals: the firmware does not call `update_chord_history()`.
 - Turning Base, Mode or Octave stops every chord and replays the ones still held. The firmware only retriggers the first one, and changing mode stops nothing (notes can hang).
 - The case has no Rhythm button (GP14), Pattern button (GP15) or potentiometer (GP28) from the firmware: their functions are in Settings.

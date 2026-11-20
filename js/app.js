@@ -1,6 +1,6 @@
 import { MODES, ROMANS, BASE_NOTES, getChordName, chordType, midiName, DRUM_NAMES, MODIFIERS, modifierById } from "./chords.js";
 import { scaleSteps, noteLabel, DURATION_LABELS } from "./rhythm.js";
-import { GENRES } from "./ai.js";
+import { GENRES, borrowedModel } from "./ai.js";
 import { Oled } from "./display.js";
 import { Synth, TIMBRES } from "./audio.js";
 import { MidiOut } from "./midi.js";
@@ -208,7 +208,12 @@ function renderReco(p) {
   const hint = $("reco-hint");
   if (p.isDrum) hint.textContent = "No recommendations in DrumMode.";
   else if (r.source === "nextchord") hint.textContent = `${p.mode} has no Chord_AI model (it is not in the dataset), so the fixed progressions from nextchord.py are used.`;
-  else if (r.source === "ai") hint.textContent = `Markov chain trained on Chordonomicon (${GENRE_LABEL(p.genre)}). Context: ${r.context.join(" → ")}. On the device, pressing the Mode encoder changes the genre.`;
+  else if (r.source === "ai") {
+    const borrowed = borrowedModel(p.mode);
+    hint.textContent = `Markov chain trained on Chordonomicon (${GENRE_LABEL(p.genre)}). Context: ${r.context.join(" → ")}.`
+      + (borrowed ? ` ${p.mode} has no data of its own, so it borrows the ${borrowed} model, the closest one.` : "")
+      + " On the device, pressing the Mode encoder changes the genre.";
+  }
   else if (r.source === "error") hint.textContent = `Could not load models/${r.file}.gz (${r.error}).`;
   else hint.textContent = "";
 }
