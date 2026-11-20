@@ -82,8 +82,14 @@
             <option value="gate">Gate · each note sounds while you hold Note</option>
             <option value="sustain">Sustain · notes build up while you hold the chord</option>
           </select>
+          <label for="note-order">Order</label>
+          <select id="note-order">
+            <option value="up">Up · lowest to highest</option>
+            <option value="down">Down · highest to lowest</option>
+            <option value="random">Random · any note, never the same twice in a row</option>
+          </select>
         </div>
-        <p class="hint"><b>Note:</b> hold it while you press a chord key and only the first note sounds; after that, each press of Note plays the next one (and starts over). If the chord is already sounding in full, it keeps sounding and Note replays its notes one by one on top. In Gate each note lasts as long as you hold Note; in Sustain they build up. In both, releasing the chord key stops them all. On the device: Settings → Note.</p>
+        <p class="hint"><b>Note:</b> hold it while you press a chord key and only the first note sounds; after that, each press of Note plays the next one (and starts over). Order picks the direction: up, down or random. If the chord is already sounding in full, it keeps sounding and Note replays its notes one by one on top. In Gate each note lasts as long as you hold Note; in Sustain they build up. In both, releasing the chord key stops them all. On the device: Settings → Note and Note order.</p>
         <p class="hint">Hold a modifier and play a chord key; they can be combined. On the device they are picked in Settings: Base down to Mod 1–3 and Mode to change it. 7th, add9 and add6 use the notes of the mode.</p>
       </div>
 
@@ -156,7 +162,7 @@
           <li><b>Proposed:</b> no 7 "7th" modes from the firmware: the seventh is played with the 7th modifier.</li>
           <li><b>Proposed:</b> a <i>Note</i> button next to the modifiers (no hole in the CAD yet): a hand-played arpeggio, one note per press.</li>
           <li><b>Proposed:</b> the 3 buttons under the screen are chord modifiers. They are held before playing the key, and each one does whatever Settings says (seventh, ninth, reduced…).</li>
-          <li><b>Proposed:</b> settings by holding any encoder for 1 s: Arp, Tempo, Pattern, New pattern, Mod 1–3, Note, Screen (chords or keyboard on the main screen). The Base encoder moves through the rows and Mode changes the value; a press only opens the editor, creates a pattern or exits. In the editor, Base picks the step, Mode changes its note (1–4 or rest) and Octave its length; a press on a step picks it up to move it. <i>Save</i> stores a preset (firmware presets are saved as a <i>User N</i> copy). Holding for 1 s again closes the menu without saving.</li>
+          <li><b>Proposed:</b> settings by holding any encoder for 1 s: Arp, Tempo, Pattern, New pattern, Mod 1–3, Note, Note order, Screen (chords or keyboard on the main screen). The Base encoder moves through the rows and Mode changes the value; a press only opens the editor, creates a pattern or exits. In the editor, Base picks the step, Mode changes its note (1–4 or rest) and Octave its length; a press on a step picks it up to move it. <i>Save</i> stores a preset (firmware presets are saved as a <i>User N</i> copy). Holding for 1 s again closes the menu without saving.</li>
         </ul>
       </div>
     </aside>

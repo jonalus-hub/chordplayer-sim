@@ -18,6 +18,9 @@ export const NOTE_VALUES = [-1, 0, 1, 2, 3];
 export const noteLabel = (i) => (i < 0 ? "-" : String(i + 1));
 export const MAX_STEPS = 16;
 
+// Order in which the Note button walks the chord: low to high, high to low, or a random note each press
+export const NOTE_ORDERS = { up: "Up", down: "Down", random: "Random" };
+
 export function scaleSteps(steps, timeStep) {
   return steps.map(([idx, mult]) => [idx, mult * timeStep]);
 }

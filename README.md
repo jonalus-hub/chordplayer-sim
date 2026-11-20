@@ -80,6 +80,7 @@ it also closes by itself after 20 s untouched.
 | New pattern | A press opens the editor with a new pattern |
 | Mod 1–3 | What each modifier does |
 | Note | Note button: **Gate** (the note sounds while pressed) or **Sustain** (notes build up while the chord is held) |
+| Note order | Order Note walks the chord in: **Up** (lowest to highest), **Down** (highest to lowest) or **Random** |
 | Screen | Main screen: **Chords** (the 7 chords in a zigzag, like the firmware) or **Keys** (keyboard) |
 | Exit | Closes |
 
@@ -133,10 +134,14 @@ To change what each one does: Settings, Base down to Mod 1–3 and Mode to pick 
 
 A fourth button, to the right of the modifiers (the May 2026 CAD has no hole for it yet).
 
-- If **Note is held when the chord key is pressed**, only the first (lowest) note sounds.
+- If **Note is held when the chord key is pressed**, only the first note sounds.
 - After that, **each press of Note plays the next note**; after the last one it goes back to the first.
+- Settings → **Note order** picks the direction:
+  - **Up** (default): from the lowest note to the highest.
+  - **Down**: from the highest note to the lowest.
+  - **Random**: a random note of the chord on each press, never the same one twice in a row.
 - If **the chord is already sounding in full** (Note was not held when it was played), the chord keeps sounding and
-  each press of Note plays one of its notes again on top, starting from the first (another Note On for that note).
+  each press of Note plays one of its notes again on top, in the chosen order (another Note On for that note).
   With several chords, Note goes with the last one played; the automatic arpeggio, if running, also keeps going.
 - Settings → **Note** picks what happens to the notes already played:
   - **Gate** (default): each note sounds while Note is held, so both rhythm and length are played by hand.

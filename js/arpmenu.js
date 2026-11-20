@@ -1,7 +1,7 @@
 // Settings menu (proposed). Opens by holding any encoder for 1 s.
 //
 // Root: Arp on/off, Tempo, Pattern, New pattern, Mod 1–3 (what each modifier does),
-// Note (Gate or Sustain), Screen, Exit.
+// Note (Gate or Sustain), Note order (Up, Down, Random), Screen, Exit.
 //   Base (top) = pick a row · Mode (middle) = change the value right away
 //   press: on Pattern opens the editor for that pattern, on New pattern creates one, on Exit closes
 // Editor:
@@ -9,7 +9,7 @@
 //   Mode   = chord note for that step (1–4, or "-" = rest)
 //   Octave = step length, in beats (1 = a quarter note at the Settings tempo)
 //   press on a step = pick it up to move it with Base; another press drops it
-import { DURATIONS, DURATION_LABELS, NOTE_VALUES, MAX_STEPS, noteLabel } from "./rhythm.js";
+import { DURATIONS, DURATION_LABELS, NOTE_VALUES, MAX_STEPS, NOTE_ORDERS, noteLabel } from "./rhythm.js";
 import { MODIFIERS, modifierById } from "./chords.js";
 
 const ACTIONS = ["Add", "Del", "Save", "Back"];
@@ -42,6 +42,11 @@ export class ArpMenu {
       ...mods,
       // Note button: Gate = the note sounds while pressed; Sustain = notes build up while the chord is held
       { label: "Note", value: p.noteMode === "sustain" ? "Sustain" : "Gate", step: () => p.setNoteMode(p.noteMode === "sustain" ? "gate" : "sustain") },
+      // Order Note walks the chord in: Up, Down or Random
+      { label: "Note order", value: NOTE_ORDERS[p.noteOrder], step: (d) => {
+        const keys = Object.keys(NOTE_ORDERS);
+        p.setNoteOrder(keys[wrap(keys.indexOf(p.noteOrder) + d, keys.length)]);
+      } },
       // Main screen: chord names in a zigzag, or a keyboard with the sounding notes
       { label: "Screen", value: p.screen === "keys" ? "Keys" : "Chords", step: () => p.setScreen(p.screen === "keys" ? "chords" : "keys") },
       { label: "Exit", value: "", press: () => p.closeMenu() },

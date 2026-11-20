@@ -3,7 +3,7 @@
 // editable arpeggios, chord modifiers and the Note button).
 import { BASE_NOTES, MODES, ROMANS, chordInfo, applyOctave, DRUM_NOTES, extendChord, extendedName, modifierById } from "./chords.js";
 import { getNextChords, chordToFunction } from "./nextchord.js";
-import { BUILTIN_PATTERNS, scaleSteps, loadUserPatterns, saveUserPatterns } from "./rhythm.js";
+import { BUILTIN_PATTERNS, scaleSteps, loadUserPatterns, saveUserPatterns, NOTE_ORDERS } from "./rhythm.js";
 import { ArpMenu } from "./arpmenu.js";
 import { GENRES, modelFile, loadModel, predict, tokenFor, parseToken } from "./ai.js";
 
@@ -20,15 +20,17 @@ export const SCREENS = { chords: "Chords", keys: "Keys" };
 // gate: each note sounds while Note is held · sustain: notes build up while the chord is held
 export const NOTE_MODES = { gate: "Gate", sustain: "Sustain" };
 
+
 function loadSettings() {
   try {
     const v = JSON.parse(localStorage.getItem(SETTINGS_KEY) || "{}");
     return {
       screen: v.screen in SCREENS ? v.screen : "chords",
       noteMode: v.noteMode in NOTE_MODES ? v.noteMode : "gate",
+      noteOrder: v.noteOrder in NOTE_ORDERS ? v.noteOrder : "up",
     };
   } catch {
-    return { screen: "chords", noteMode: "gate" };
+    return { screen: "chords", noteMode: "gate", noteOrder: "up" };
   }
 }
 
@@ -82,6 +84,7 @@ export class ChordPlayer {
     const settings = loadSettings();
     this.screen = settings.screen;        // "chords" (names in a zigzag) or "keys" (keyboard)
     this.noteMode = settings.noteMode;    // "gate" or "sustain" (Note button)
+    this.noteOrder = settings.noteOrder;  // "up", "down" or "random" (Note button)
     this.menu = null;            // ArpMenu while it is open
   }
 
@@ -130,7 +133,7 @@ export class ChordPlayer {
     if (a && !this.isDrum) {
       // Next note of the chord (after the last one it goes back to the first)
       if (this.noteMode === "gate") this.noteArpStop();
-      a.idx = (a.idx + 1) % this.notesFor(a.chord, a.mods).length;
+      a.idx = this.nextNoteIdx(a.idx, this.notesFor(a.chord, a.mods).length);
       this.noteArpPlay();
     } else if (!this.isDrum) {
       // Note with a chord already sounding: the chord keeps going and its notes are played
@@ -138,7 +141,8 @@ export class ChordPlayer {
       const full = this.fullChords();
       const chord = full.includes(this.current) ? this.current : full.at(-1);
       if (chord) {
-        this.noteArp = { chord, mods: this.held.get(chord).mods, idx: 0, playing: null, sounding: new Set() };
+        const mods = this.held.get(chord).mods;
+        this.noteArp = { chord, mods, idx: this.firstNoteIdx(this.notesFor(chord, mods).length), playing: null, sounding: new Set() };
         this.noteArpPlay();
         this.log(`Chord ${chord}: Note plays its notes one by one on top`);
       }
@@ -192,7 +196,7 @@ export class ChordPlayer {
   }
 
   saveSettings() {
-    try { localStorage.setItem(SETTINGS_KEY, JSON.stringify({ screen: this.screen, noteMode: this.noteMode })); } catch { /* this session only */ }
+    try { localStorage.setItem(SETTINGS_KEY, JSON.stringify({ screen: this.screen, noteMode: this.noteMode, noteOrder: this.noteOrder })); } catch { /* this session only */ }
   }
 
   setScreen(screen) {
@@ -200,6 +204,31 @@ export class ChordPlayer {
     this.saveSettings();
     this.log(`Screen set to ${SCREENS[this.screen]}`);
     this.onChange();
+  }
+
+  setNoteOrder(order) {
+    this.noteOrder = order in NOTE_ORDERS ? order : "up";
+    this.saveSettings();
+    this.log(`Note order set to ${NOTE_ORDERS[this.noteOrder]}`);
+    this.onChange();
+  }
+
+  // First note Note plays: the lowest (Up), the highest (Down) or any (Random)
+  firstNoteIdx(n) {
+    if (this.noteOrder === "down") return n - 1;
+    if (this.noteOrder === "random") return Math.floor(Math.random() * n);
+    return 0;
+  }
+
+  // Next note: one up or one down (wrapping), or a random one that is not the current note
+  nextNoteIdx(idx, n) {
+    if (this.noteOrder === "down") return (idx - 1 + n) % n;
+    if (this.noteOrder === "random") {
+      if (n < 2) return 0;
+      const r = Math.floor(Math.random() * (n - 1));
+      return r >= idx ? r + 1 : r;
+    }
+    return (idx + 1) % n;
   }
 
   setNoteMode(mode) {
@@ -294,7 +323,7 @@ export class ChordPlayer {
       if (mods.length) this.log(`Chord ${roman} + ${mods.map((m) => modifierById(m).label).join(" + ")}: ${this.chordName(roman)}`);
       if (manual) {
         // With Note held only the first note sounds; the rest, one per press of Note
-        this.noteArp = { chord: roman, mods, idx: 0, playing: null, sounding: new Set() };
+        this.noteArp = { chord: roman, mods, idx: this.firstNoteIdx(this.notesFor(roman, mods).length), playing: null, sounding: new Set() };
         this.noteArpPlay();
         this.log(`Chord ${roman} note by note: press Note for each next note`);
       } else if (this.rhythmMode) this.startRhythm(roman);

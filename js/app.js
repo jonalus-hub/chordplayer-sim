@@ -117,6 +117,7 @@ for (let i = 0; i < 3; i++) {
 $("history-clear").addEventListener("click", () => player.clearHistory());
 $("screen").addEventListener("change", (e) => player.setScreen(e.target.value));
 $("note-mode").addEventListener("change", (e) => player.setNoteMode(e.target.value));
+$("note-order").addEventListener("change", (e) => player.setNoteOrder(e.target.value));
 $("reco-leds").addEventListener("change", (e) => player.setHints(e.target.checked, player.showBars));
 $("reco-oled").addEventListener("change", (e) => player.setHints(player.showLeds, e.target.checked));
 $("log-midi").addEventListener("change", (e) => { logMidi = e.target.checked; });
@@ -238,6 +239,7 @@ function render() {
   });
   $("screen").value = p.screen;
   $("note-mode").value = p.noteMode;
+  $("note-order").value = p.noteOrder;
 
   for (const r of ROMANS) {
     const k = dev.keys[r];
