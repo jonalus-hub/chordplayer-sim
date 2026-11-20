@@ -109,6 +109,7 @@ $("rhythm-next").addEventListener("click", () => player.nextPattern());
 $("pattern").addEventListener("change", (e) => player.selectPattern(+e.target.value));
 $("pattern-delete").addEventListener("click", () => player.deletePattern(player.rhythmIdx));
 $("bpm").addEventListener("input", (e) => player.setBpm(+e.target.value));
+$("quantize").addEventListener("change", (e) => player.setQuantize(e.target.value));
 for (let i = 0; i < 3; i++) {
   const sel = $(`mod-${i}`);
   MODIFIERS.forEach((m) => sel.append(new Option(`${m.label} · ${m.desc}`, m.id)));
@@ -272,7 +273,8 @@ function render() {
   } else if (chords.length) {
     $("now-chord").textContent = chords.map((r) => p.chordName(r)).join(" + ");
     const cur = chords.includes(p.current) ? p.current : chords.at(-1);
-    $("now-meta").textContent = `Degree ${chords.join(" + ")} of ${BASE_NOTES[p.baseIdx]} ${p.mode} · ${chordType(p.mode, cur)}${p.rhythmMode ? ` · arpeggiated (${p.patterns[p.rhythmIdx].name})` : ""}`;
+    const queued = p.rhythmMode && p.quantized && p.rhythm?.next ? ` · next: ${p.chordName(p.rhythm.next)}` : "";
+    $("now-meta").textContent = `Degree ${chords.join(" + ")} of ${BASE_NOTES[p.baseIdx]} ${p.mode} · ${chordType(p.mode, cur)}${p.rhythmMode ? ` · arpeggiated (${p.patterns[p.rhythmIdx].name})` : ""}${queued}`;
     const notes = [...p.activeNotes()].sort((a, b) => a - b);
     $("now-notes").textContent = notes.length ? notes.map((n) => `${midiName(n)} (${n})`).join("  ") : " ";
   } else {
@@ -311,6 +313,11 @@ function render() {
   $("bpm").value = String(p.bpm);
   $("bpm-val").textContent = `${p.bpm} BPM`;
   $("rhythm-on").checked = p.rhythmMode;
+  $("quantize").value = p.quantize;
+  const r = p.rhythm;
+  $("arp-queue").textContent = !r || !p.quantized ? "" : r.next
+    ? `Next: ${p.chordName(r.next)} when the pattern ends`
+    : r.ending ? "Finishing the pattern, then stopping" : "";
 
   const a = $("audio-state");
   const running = synth.ctx && synth.ctx.state === "running";

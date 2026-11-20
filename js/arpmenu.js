@@ -1,6 +1,6 @@
 // Settings menu (proposed). Opens by holding any encoder for 1 s.
 //
-// Root: Arp on/off, Tempo, Pattern, New pattern, Mod 1–3 (what each modifier does),
+// Root: Arp on/off, Tempo, Pattern, New pattern, Quantize, Mod 1–3 (what each modifier does),
 // Note (Gate or Sustain), Note order (Up, Down, Random), Screen, Exit.
 //   Base (top) = pick a row · Mode (middle) = change the value right away
 //   press: on Pattern opens the editor for that pattern, on New pattern creates one, on Exit closes
@@ -9,7 +9,7 @@
 //   Mode   = chord note for that step (1–4, or "-" = rest)
 //   Octave = step length, in beats (1 = a quarter note at the Settings tempo)
 //   press on a step = pick it up to move it with Base; another press drops it
-import { DURATIONS, DURATION_LABELS, NOTE_VALUES, MAX_STEPS, NOTE_ORDERS, noteLabel } from "./rhythm.js";
+import { DURATIONS, DURATION_LABELS, NOTE_VALUES, MAX_STEPS, NOTE_ORDERS, QUANTIZE, noteLabel } from "./rhythm.js";
 import { MODIFIERS, modifierById } from "./chords.js";
 
 const ACTIONS = ["Add", "Del", "Save", "Back"];
@@ -39,6 +39,8 @@ export class ArpMenu {
       // Mode picks the active arpeggio (heard right away); a press opens it in the editor
       { label: "Pattern", value: p.patterns[p.rhythmIdx].name.slice(0, 8), step: (d) => p.selectPattern(p.rhythmIdx + d), press: () => this.openEditor(p.rhythmIdx) },
       { label: "New pattern", value: "", press: () => this.openEditor(null) },
+      // Quantize: a new chord waits for the running pattern to finish
+      { label: "Quantize", value: QUANTIZE[p.quantize], step: () => p.setQuantize(p.quantized ? "off" : "pattern") },
       ...mods,
       // Note button: Gate = the note sounds while pressed; Sustain = notes build up while the chord is held
       { label: "Note", value: p.noteMode === "sustain" ? "Sustain" : "Gate", step: () => p.setNoteMode(p.noteMode === "sustain" ? "gate" : "sustain") },

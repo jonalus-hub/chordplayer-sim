@@ -3,7 +3,7 @@
 // editable arpeggios, chord modifiers and the Note button).
 import { BASE_NOTES, MODES, ROMANS, chordInfo, applyOctave, DRUM_NOTES, extendChord, extendedName, modifierById } from "./chords.js";
 import { getNextChords, chordToFunction } from "./nextchord.js";
-import { BUILTIN_PATTERNS, scaleSteps, loadUserPatterns, saveUserPatterns, NOTE_ORDERS } from "./rhythm.js";
+import { BUILTIN_PATTERNS, scaleSteps, loadUserPatterns, saveUserPatterns, NOTE_ORDERS, QUANTIZE } from "./rhythm.js";
 import { ArpMenu } from "./arpmenu.js";
 import { GENRES, modelFile, loadModel, predict, tokenFor, parseToken } from "./ai.js";
 
@@ -21,6 +21,7 @@ export const SCREENS = { chords: "Chords", keys: "Keys" };
 export const NOTE_MODES = { gate: "Gate", sustain: "Sustain" };
 
 
+
 function loadSettings() {
   try {
     const v = JSON.parse(localStorage.getItem(SETTINGS_KEY) || "{}");
@@ -28,9 +29,10 @@ function loadSettings() {
       screen: v.screen in SCREENS ? v.screen : "chords",
       noteMode: v.noteMode in NOTE_MODES ? v.noteMode : "gate",
       noteOrder: v.noteOrder in NOTE_ORDERS ? v.noteOrder : "up",
+      quantize: v.quantize in QUANTIZE ? v.quantize : "off",
     };
   } catch {
-    return { screen: "chords", noteMode: "gate", noteOrder: "up" };
+    return { screen: "chords", noteMode: "gate", noteOrder: "up", quantize: "off" };
   }
 }
 
@@ -85,6 +87,7 @@ export class ChordPlayer {
     this.screen = settings.screen;        // "chords" (names in a zigzag) or "keys" (keyboard)
     this.noteMode = settings.noteMode;    // "gate" or "sustain" (Note button)
     this.noteOrder = settings.noteOrder;  // "up", "down" or "random" (Note button)
+    this.quantize = settings.quantize;    // "off" or "pattern" (arpeggio)
     this.menu = null;            // ArpMenu while it is open
   }
 
@@ -196,7 +199,7 @@ export class ChordPlayer {
   }
 
   saveSettings() {
-    try { localStorage.setItem(SETTINGS_KEY, JSON.stringify({ screen: this.screen, noteMode: this.noteMode, noteOrder: this.noteOrder })); } catch { /* this session only */ }
+    try { localStorage.setItem(SETTINGS_KEY, JSON.stringify({ screen: this.screen, noteMode: this.noteMode, noteOrder: this.noteOrder, quantize: this.quantize })); } catch { /* this session only */ }
   }
 
   setScreen(screen) {
@@ -205,6 +208,15 @@ export class ChordPlayer {
     this.log(`Screen set to ${SCREENS[this.screen]}`);
     this.onChange();
   }
+
+  setQuantize(q) {
+    this.quantize = q in QUANTIZE ? q : "off";
+    this.saveSettings();
+    this.log(`Arpeggio quantize set to ${QUANTIZE[this.quantize]}`);
+    this.onChange();
+  }
+
+  get quantized() { return this.quantize === "pattern"; }
 
   setNoteOrder(order) {
     this.noteOrder = order in NOTE_ORDERS ? order : "up";
@@ -298,6 +310,8 @@ export class ChordPlayer {
       if (this.noteMode === "gate" && this.noteHeld && !this.isDrum && this.held.has(this.noteArp.chord)) this.noteArpPlay();
     }
     const chords = this.fullChords();
+    // Quantized: the pattern keeps its place in the cycle and picks up the new notes
+    if (this.rhythm && this.quantized && this.rhythmMode && !this.isDrum) return;
     const was = this.rhythm?.chord;
     this.stopRhythm();
     if (this.isDrum || !chords.length) return;
@@ -349,8 +363,15 @@ export class ChordPlayer {
     if (!e.drum && !e.manual) {
       if (this.rhythmMode) {
         const chords = this.fullChords();
-        if (!chords.length) this.stopRhythm();
-        else if (this.rhythm && this.rhythm.chord === roman) this.startRhythm(chords.at(-1));
+        const r = this.rhythm;
+        if (r && this.quantized) {
+          // Quantized: nothing is cut. A queued chord that is released is dropped; with every key
+          // released the pattern plays to its end and then stops (unless a chord comes in time)
+          if (r.next === roman) r.next = null;
+          if (!chords.length) { r.next = null; r.ending = true; }
+          else if (r.chord === roman && !r.next) this.startRhythm(chords.at(-1));
+        } else if (!chords.length) this.stopRhythm();
+        else if (r && r.chord === roman) this.startRhythm(chords.at(-1));
       } else {
         this.stopChord(roman);
       }
@@ -574,7 +595,8 @@ export class ChordPlayer {
   selectPattern(i, restart = true) {
     this.rhythmIdx = wrap(i, this.patterns.length);
     this.log(`Rhythm pattern: ${this.patterns[this.rhythmIdx].name}`);
-    if (restart && this.rhythm) { const c = this.rhythm.chord; this.stopRhythm(); this.startRhythm(c); }
+    // Quantized, the new pattern starts on the next cycle (tick() picks it up)
+    if (restart && this.rhythm && !this.quantized) { const c = this.rhythm.chord; this.stopRhythm(); this.startRhythm(c); }
     this.onChange();
   }
 
@@ -587,25 +609,53 @@ export class ChordPlayer {
   }
 
   startRhythm(chord) {
-    if (this.rhythm && this.rhythm.chord === chord) return;
+    const old = this.rhythm;
+    const mods = this.held.get(chord)?.mods ?? [];
+    if (old && old.chord === chord) { old.next = null; old.ending = false; return; }
+    // Quantized: queue the chord; it starts when the running pattern ends
+    if (old && this.quantized) {
+      old.next = chord;
+      old.nextMods = mods;
+      old.ending = false;
+      this.onChange();
+      return;
+    }
     this.stopRhythm();
-    const r = { chord, step: 0, note: null, timer: null, gate: null, stepIdx: -1 };
+    const r = { chord, mods, step: 0, steps: null, note: null, owner: null, timer: null, gate: null, stepIdx: -1, next: null, nextMods: null, ending: false };
     this.rhythm = r;
     const tick = () => {
       if (this.rhythm !== r) return;
-      const pattern = scaleSteps(this.activeSteps(), this.timeStep);
-      if (r.step >= pattern.length) r.step = 0;
-      const [idx, delay] = pattern[r.step++];
-      const notes = this.notesFor(chord);
+      // Not quantized: steps are read live. Quantized: they are fixed for the whole cycle
+      if (!r.steps || !this.quantized) r.steps = this.activeSteps();
+      if (r.step >= r.steps.length) {
+        // A full pattern has played
+        r.step = 0;
+        if (this.quantized) {
+          if (r.next) {
+            r.chord = r.next; r.mods = r.nextMods; r.next = null; r.nextMods = null;
+            this.current = this.held.has(r.chord) ? r.chord : this.current;
+          } else if (r.ending) {
+            this.rhythm = null;
+            this.onChange();
+            return;
+          }
+          r.steps = this.activeSteps();
+        }
+      }
+      const [idx, mult] = r.steps[r.step++];
+      const delay = mult * this.timeStep;
+      const notes = this.notesFor(r.chord, r.mods);
       r.stepIdx = r.step - 1;
       this.onChange();
       // idx -1 = rest; a note the chord does not have (the 4th in a triad) is silent too
       if (idx >= 0 && idx < notes.length) {
         const playing = notes[idx];
+        const owner = r.chord;
         r.note = playing;
-        this.sendNoteOn(playing, chord);
+        r.owner = owner;
+        this.sendNoteOn(playing, owner);
         r.gate = setTimeout(() => {
-          this.sendNoteOff(playing, chord);
+          this.sendNoteOff(playing, owner);
           if (r.note === playing) r.note = null;
           this.onChange();
         }, Math.max(GATE_MIN_S, delay * GATE_FRACTION) * 1000);
@@ -620,7 +670,7 @@ export class ChordPlayer {
     if (!r) return;
     clearTimeout(r.timer);
     clearTimeout(r.gate);
-    if (r.note != null) this.sendNoteOff(r.note, r.chord);
+    if (r.note != null) this.sendNoteOff(r.note, r.owner);
     this.rhythm = null;
   }
 

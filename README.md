@@ -99,6 +99,7 @@ it also closes by itself after 20 s untouched.
 | Tempo | 40–300 BPM, in steps of 1 (on the firmware, the GP28 potentiometer sets `time_step` in seconds) |
 | Pattern | Active arpeggio (Mode changes it and it plays right away); a press opens it in the editor |
 | New pattern | A press opens the editor with a new pattern |
+| Quantize | **Off**: a new chord restarts the arpeggio at once · **Pattern**: the running pattern finishes first |
 | Mod 1–3 | What each modifier does |
 | Note | Note button: **Gate** (the note sounds while pressed) or **Sustain** (notes build up while the chord is held) |
 | Note order | Order Note walks the chord in: **Up** (lowest to highest), **Down** (highest to lowest) or **Random** |
@@ -112,6 +113,19 @@ keyboard with the sounding notes inverted (white keys filled, black keys hollow)
 chord that is sounding (`Dm7`, `C + Em`…). The keyboard starts at the C of the chosen octave and, if a chord
 does not fit, moves to the C below its lowest note; if something is still off the top, the name gets a ` >`.
 With the arpeggio you can see the note of each step. DrumMode always shows the pad names.
+
+## Arpeggio quantize (proposed)
+
+With Settings → Quantize = **Pattern**, nothing in the arpeggio is cut halfway:
+
+- Playing another chord queues it: the running pattern finishes with the current chord and the new one starts
+  right after, on the next cycle. If several chords are played meanwhile, the last one still held wins; a queued
+  chord that is released before the cycle ends is dropped.
+- Releasing every key lets the pattern play to its end and then stops it. If a chord comes in before that, it
+  starts on time, so the beat is kept even when playing detached.
+- Changing pattern, editing it, or turning Base, Mode or Octave never restarts the cycle: the notes change on the
+  next step and the pattern on the next cycle.
+- The page shows the queued chord (`next: Dm`). With **Off** (default) a new chord restarts the pattern at once.
 
 ## Editable arpeggios (proposed)
 

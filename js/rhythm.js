@@ -21,6 +21,10 @@ export const MAX_STEPS = 16;
 // Order in which the Note button walks the chord: low to high, high to low, or a random note each press
 export const NOTE_ORDERS = { up: "Up", down: "Down", random: "Random" };
 
+// Arpeggio quantize: off = a new chord restarts the pattern at once;
+// pattern = the running pattern finishes first, then the new chord starts on the next cycle
+export const QUANTIZE = { off: "Off", pattern: "Pattern" };
+
 export function scaleSteps(steps, timeStep) {
   return steps.map(([idx, mult]) => [idx, mult * timeStep]);
 }
